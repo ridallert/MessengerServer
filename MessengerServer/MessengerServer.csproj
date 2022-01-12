@@ -49,6 +49,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Common\Chat.cs" />
     <Compile Include="Common\LogEntry.cs" />
     <Compile Include="Common\Message.cs" />
     <Compile Include="Common\User.cs" />
@@ -80,7 +81,7 @@
     <Compile Include="Network\Responses\SendMessageResponse.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ServerState.cs" />
+    <Compile Include="ServerStateManager.cs" />
     <Compile Include="WsConnection.cs" />
     <Compile Include="WsServer.cs" />
   </ItemGroup>

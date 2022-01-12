@@ -18,11 +18,11 @@ namespace MessengerServer
         private const int WS_PORT = 7890;
         private readonly IPAddress _ipAddress = IPAddress.Any;
         private readonly WsServer _wsServer;
-        private ServerState _serverState;
+        private ServerStateManager _serverState;
 
         public NetworkManager()
         {
-            _serverState = new ServerState();
+            _serverState = new ServerStateManager();
             _wsServer = new WsServer(_serverState, new IPEndPoint(_ipAddress, WS_PORT));
             _wsServer.UserStatusChanged += HandleUserStatusChanged;
             _wsServer.MessageReceived += HandleMessageReceived;

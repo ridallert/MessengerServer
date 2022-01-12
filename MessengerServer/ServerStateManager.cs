@@ -11,10 +11,11 @@ using System.Threading.Tasks;
 
 namespace MessengerServer
 {
-    public class ServerState
+    public class ServerStateManager
     {
         private List<User> _users;
-
+        private List<Message> _messages;
+        private List<Chat> _chats;
         public List<User> Users
         {
             get { return _users; }
@@ -24,11 +25,27 @@ namespace MessengerServer
                 UserListChanged?.Invoke();
             }
         }
-
+        public List<Message> Messages
+        {
+            get { return _messages; }
+            set
+            {
+                _messages = value;
+            }
+        }
+        public List<Chat> Chats
+        {
+            get { return _users; }
+            set
+            {
+                _users = value;
+                UserListChanged?.Invoke();
+            }
+        }
         public event Action UserListChanged;
         public event EventHandler<Message> PrivateMessageReceived;
 
-        public ServerState()
+        public ServerStateManager()
         {
             Users = new List<User>();
 
@@ -38,33 +55,29 @@ namespace MessengerServer
             Users.Add(new User("Мария", OnlineStatus.Offline));
             Users.Add(new User("Ридаль", OnlineStatus.Offline));
 
-            Users[0].MessageList.Add(new Message(Users[0].Name, Users[2].Name, Users[2].Name + ", Привет от " + Users[0].Name + "!", DateTime.Now));
-            Users[1].MessageList.Add(new Message(Users[1].Name, Users[2].Name, Users[2].Name + ", Привет от " + Users[1].Name + "!", DateTime.Now));
-            Users[3].MessageList.Add(new Message(Users[3].Name, Users[2].Name, Users[2].Name + ", Привет от " + Users[3].Name + "!", DateTime.Now));
-            Users[4].MessageList.Add(new Message(Users[4].Name, Users[2].Name, Users[2].Name + ", Привет от " + Users[4].Name + "!", DateTime.Now));
-            Users[2].MessageList.Add(new Message(Users[2].Name, Users[1].Name, Users[1].Name + ", Привет от " + Users[2].Name + "!", DateTime.Now));
-            Users[3].MessageList.Add(new Message(Users[3].Name, Users[4].Name, Users[4].Name + ", Привет от " + Users[3].Name + "!", DateTime.Now));
-            Users[0].MessageList.Add(new Message(Users[0].Name, Users[3].Name, Users[3].Name + ", Привет от " + Users[0].Name + "!", DateTime.Now));
 
-            Users[2].MessageList.Add(new Message(Users[0].Name, Users[2].Name, Users[2].Name + ", Привет от " + Users[0].Name + "!", DateTime.Now));
-            Users[2].MessageList.Add(new Message(Users[1].Name, Users[2].Name, Users[2].Name + ", Привет от " + Users[1].Name + "!", DateTime.Now));
-            Users[2].MessageList.Add(new Message(Users[3].Name, Users[2].Name, Users[2].Name + ", Привет от " + Users[3].Name + "!", DateTime.Now));
-            Users[2].MessageList.Add(new Message(Users[4].Name, Users[2].Name, Users[2].Name + ", Привет от " + Users[4].Name + "!", DateTime.Now));
-            Users[1].MessageList.Add(new Message(Users[2].Name, Users[1].Name, Users[1].Name + ", Привет от " + Users[2].Name + "!", DateTime.Now));
-            Users[4].MessageList.Add(new Message(Users[3].Name, Users[4].Name, Users[4].Name + ", Привет от " + Users[3].Name + "!", DateTime.Now));
-            Users[3].MessageList.Add(new Message(Users[0].Name, Users[3].Name, Users[3].Name + ", Привет от " + Users[0].Name + "!", DateTime.Now));
+            Messages = new List<Message>();
+            Messages.Add(new Message(Users[0].Name, Users[2].Name, Users[2].Name + ", Привет от " + Users[0].Name + "!", DateTime.Now));
+            Messages.Add(new Message(Users[1].Name, Users[2].Name, Users[2].Name + ", Привет от " + Users[1].Name + "!", DateTime.Now));
+            Messages.Add(new Message(Users[3].Name, Users[2].Name, Users[2].Name + ", Привет от " + Users[3].Name + "!", DateTime.Now));
+            Messages.Add(new Message(Users[4].Name, Users[2].Name, Users[2].Name + ", Привет от " + Users[4].Name + "!", DateTime.Now));
+            Messages.Add(new Message(Users[2].Name, Users[1].Name, Users[1].Name + ", Привет от " + Users[2].Name + "!", DateTime.Now));
+            Messages.Add(new Message(Users[3].Name, Users[4].Name, Users[4].Name + ", Привет от " + Users[3].Name + "!", DateTime.Now));
+            Messages.Add(new Message(Users[0].Name, Users[3].Name, Users[3].Name + ", Привет от " + Users[0].Name + "!", DateTime.Now));
+
+            Messages.Add(new Message(Users[0].Name, Users[2].Name, Users[2].Name + ", Привет от " + Users[0].Name + "!", DateTime.Now));
+            Messages.Add(new Message(Users[1].Name, Users[2].Name, Users[2].Name + ", Привет от " + Users[1].Name + "!", DateTime.Now));
+            Messages.Add(new Message(Users[3].Name, Users[2].Name, Users[2].Name + ", Привет от " + Users[3].Name + "!", DateTime.Now));
+            Messages.Add(new Message(Users[4].Name, Users[2].Name, Users[2].Name + ", Привет от " + Users[4].Name + "!", DateTime.Now));
+            Messages.Add(new Message(Users[2].Name, Users[1].Name, Users[1].Name + ", Привет от " + Users[2].Name + "!", DateTime.Now));
+            Messages.Add(new Message(Users[3].Name, Users[4].Name, Users[4].Name + ", Привет от " + Users[3].Name + "!", DateTime.Now));
+            Messages.Add(new Message(Users[0].Name, Users[3].Name, Users[3].Name + ", Привет от " + Users[0].Name + "!", DateTime.Now));
         }
 
         public GetContactsResponse GetContacts(string name)
         {
             List<User> contactList = new List<User>();
-            foreach (User user in Users)
-            {
-                if (name != null && name != user.Name)
-                {
-                    contactList.Add(new User(user.Name, user.IsOnline));
-                }
-            }
+            contactList = Users.FindAll(user => name != null && name != user.Name);
 
             if (contactList.Count != 0)
             {
@@ -78,25 +91,32 @@ namespace MessengerServer
 
         public void AddPrivateMessage(string sender, string receiver, string text, DateTime sendTime)
         {
-            Message message = new Message(sender, receiver, text, sendTime);
-
-            foreach (User user in Users)
+            if (Users.Exists(user => user.Name == sender))
             {
-                if (user.Name == sender || user.Name == receiver)
+                if (Users.Exists(user => user.Name == receiver))
                 {
-                    user.MessageList.Add(message);
+                    Message message = new Message(sender, receiver, text, sendTime);
+                    Messages.Add(message);
+                    PrivateMessageReceived?.Invoke(this, message);
+                }
+                else
+                {
+                    throw new Exception("AddPrivateMessage: Sender '" + receiver + "' does not exist");
                 }
             }
-            PrivateMessageReceived?.Invoke(this, message);
-        }
-
-        public void SendGroupMessage(string sender, string text)
-        {
-            for (int i = 0; i < Users.Count; i++)
+            else
             {
-                //Users[i].MessageList.Add(new Message(sender, Users[i].Name, text, true));
+                throw new Exception("AddPrivateMessage: Sender '" + sender + "' does not exist");
             }
         }
+
+        //public void AddPrivateMessage(string sender, string text)
+        //{
+        //    for (int i = 0; i < Users.Count; i++)
+        //    {
+        //        //Users[i].MessageList.Add(new Message(sender, Users[i].Name, text, true));
+        //    }
+        //}
 
         public GetPrivateMessageListResponse GetPrivateMessageList(string name)
         {
@@ -104,16 +124,14 @@ namespace MessengerServer
 
             foreach (User user in Users)
             {
-                if (user.Name == name)
+                foreach (Message message in Messages)
                 {
-                    foreach (Message message in user.MessageList)
+                    if ((message.Sender == name || message.Receiver == name) && !message.IsGroopChatMessage)
                     {
-                        if(!message.IsGroopChatMessage)
-                            messages.Add(message);
+                        messages.Add(message);
                     }
                 }
             }
-
             if (messages.Count != 0)
             {
                 return new GetPrivateMessageListResponse("Success", messages);
@@ -203,7 +221,7 @@ namespace MessengerServer
             }
         }
 
-        
+
         public void SetUserOffline(string name)
         {
             foreach (User user in Users)

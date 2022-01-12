@@ -12,8 +12,6 @@ namespace MessengerServer.Common
     {
         private string _name;
         private OnlineStatus _isOnline;
-        private List<Message> _messageList;
-        //private int? _newMessagesCounter;
 
         public string Name
         {
@@ -23,14 +21,6 @@ namespace MessengerServer.Common
                 _name = value;
             }
         }
-        //public int? NewMessagesCounter
-        //{
-        //    get { return _newMessagesCounter; }
-        //    set
-        //    {
-        //        _newMessagesCounter = value;
-        //    }
-        //}
         public OnlineStatus IsOnline
         {
             get { return _isOnline; }
@@ -42,20 +32,11 @@ namespace MessengerServer.Common
                 }
             }
         }
-        public List<Message> MessageList
-        {
-            get { return _messageList; }
-            set
-            {
-                _messageList = value; 
-            }
-        }
 
         public User(string name, OnlineStatus isOnline)
         {
             Name = name;
             IsOnline = isOnline;
-            MessageList = new List<Message>();
         }
     }
 }

@@ -21,13 +21,13 @@ namespace MessengerServer
     {
         private readonly IPEndPoint _listenAddress;
         private readonly ConcurrentDictionary<Guid, WsConnection> _connections;
-        private ServerState _serverState;
+        private ServerStateManager _serverState;
         private WebSocketServer _server;
 
         public event Action<UserStatusChangedBroadcast> UserStatusChanged;
         public event EventHandler<MessageReceivedEventArgs> MessageReceived;
 
-        public WsServer(ServerState serverState, IPEndPoint listenAddress)
+        public WsServer(ServerStateManager serverState, IPEndPoint listenAddress)
         {
             _serverState = serverState;
             _listenAddress = listenAddress;
