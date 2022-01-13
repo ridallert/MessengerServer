@@ -42,6 +42,7 @@ namespace MessengerServer
             //_server.AddWebSocketService<WsConnection>("/", AddService);
             _server.Start();
             _serverState.PrivateMessageReceived += SendPrivateMessage;
+            _serverState.PublicMessageReceived += SendPublicMessage;
         }
 
         //WsConnection AddService()
@@ -88,7 +89,7 @@ namespace MessengerServer
                     AuthorizationRequest authorizationRequest = JsonConvert.DeserializeObject<AuthorizationRequest>(container.Payload.ToString());
                     AuthorizationResponse authorizationResponse = _serverState.AuthorizeUser(authorizationRequest.Name);
                     connection.Send(authorizationResponse.GetContainer());
-                    
+
                     if (authorizationResponse.Result != "NameIsTaken")
                     {
                         connection.Login = authorizationRequest.Name;
@@ -102,13 +103,19 @@ namespace MessengerServer
                     GetContactsRequest getContactsRequest = JsonConvert.DeserializeObject<GetContactsRequest>(container.Payload.ToString());
                     GetContactsResponse getContactsResponse = _serverState.GetContacts(getContactsRequest.Name);
                     connection.Send(getContactsResponse.GetContainer());
-                    break;  
+                    break;
 
                 case nameof(SendPrivateMessageRequest):
 
                     var privateMessageRequest = JsonConvert.DeserializeObject<SendPrivateMessageRequest>(container.Payload.ToString());
                     _serverState.AddPrivateMessage(privateMessageRequest.Sender, privateMessageRequest.Receiver, privateMessageRequest.Text, privateMessageRequest.SendTime);
                     var privateMessageResponse = new SendMessageResponse("Success");
+                    break;
+                case nameof(SendPublicMessageRequest):
+
+                    var publicMessageRequest = JsonConvert.DeserializeObject<SendPublicMessageRequest>(container.Payload.ToString());
+                    _serverState.AddPublicMessage(publicMessageRequest.Sender, publicMessageRequest.Text, publicMessageRequest.SendTime);
+                    var publicMessageResponse = new SendMessageResponse("Success");
                     break;
                 case nameof(GetPrivateMessageListRequest):
 
@@ -120,8 +127,15 @@ namespace MessengerServer
                 case nameof(GetPublicMessageListRequest):
 
                     GetPublicMessageListRequest getPublicMessageListRequest = JsonConvert.DeserializeObject<GetPublicMessageListRequest>(container.Payload.ToString());
-                    //GetPublicMessageListResponse getPublicMessageListResponse = _serverState.GetPublicMessageList(getPublicMessageListRequest.Name);
-                    //connection.Send(getPublicMessageListResponse.GetContainer());
+                    GetPublicMessageListResponse getPublicMessageListResponse = _serverState.GetPublicMessageList();
+                    connection.Send(getPublicMessageListResponse.GetContainer());
+                    break;
+
+                case nameof(GetEventListRequest):
+
+                    GetEventListRequest getEventListRequest = JsonConvert.DeserializeObject<GetEventListRequest>(container.Payload.ToString());
+                    GetEventListResponse getEventListResponse = _serverState.GetEventLog();
+                    connection.Send(getEventListResponse.GetContainer());
                     break;
             }
         }
@@ -144,6 +158,14 @@ namespace MessengerServer
                     var privateMessageResponse = new PrivateMessageReceivedResponse(message.Sender, message.Receiver, message.Text, message.SendTime);
                     connection.Value.Send(privateMessageResponse.GetContainer());
                 }
+            }
+        }
+        internal void SendPublicMessage(object sender, Message message)
+        {
+            foreach (var connection in _connections)
+            {
+                var publicMessageResponse = new PublicMessageReceivedResponse(message.Sender, message.Text, message.SendTime);
+                connection.Value.Send(publicMessageResponse.GetContainer());
             }
         }
 

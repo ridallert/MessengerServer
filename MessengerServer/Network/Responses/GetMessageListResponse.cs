@@ -18,11 +18,11 @@ namespace MessengerServer.Network.Responses
             MessageList = messageList;
         }
 
-        public GetMessageListResponse(string result)
-        {
-            Result = result;
-            MessageList = new List<Message>();
-        }
+        //public GetMessageListResponse(string result)
+        //{
+        //    Result = result;
+        //    MessageList = new List<Message>();
+        //}
 
         public MessageContainer GetContainer()
         {

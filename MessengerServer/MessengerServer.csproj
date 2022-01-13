@@ -49,10 +49,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Common\Chat.cs" />
+    <Compile Include="Common\Contact.cs" />
     <Compile Include="Common\LogEntry.cs" />
     <Compile Include="Common\Message.cs" />
-    <Compile Include="Common\User.cs" />
     <Compile Include="NetworkManager.cs" />
     <Compile Include="Network\Broadcasts\PublicMessageDeliveredBroadcast.cs" />
     <Compile Include="Network\Broadcasts\UserStatusChangedBroadcast.cs" />
@@ -78,6 +77,7 @@
     <Compile Include="Network\Responses\GetContactsResponse.cs" />
     <Compile Include="Network\Responses\LogOutResponse.cs" />
     <Compile Include="Network\Responses\PrivateMessageReceivedResponse.cs" />
+    <Compile Include="Network\Responses\PublicMessageReceivedResponse.cs" />
     <Compile Include="Network\Responses\SendMessageResponse.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

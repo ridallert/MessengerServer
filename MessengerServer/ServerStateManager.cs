@@ -13,188 +13,102 @@ namespace MessengerServer
 {
     public class ServerStateManager
     {
-        private List<User> _users;
+        private List<Contact> _contacts;
         private List<Message> _messages;
-        private List<Chat> _chats;
-        public List<User> Users
+        private Contact _publicChat;
+        private List<LogEntry> _eventList;
+        public List<Contact> Contacts
         {
-            get { return _users; }
+            get { return _contacts; }
             set
             {
-                _users = value;
+                _contacts = value;
                 UserListChanged?.Invoke();
             }
         }
         public List<Message> Messages
         {
             get { return _messages; }
-            set
-            {
-                _messages = value;
-            }
+            set { _messages = value; }
         }
-        public List<Chat> Chats
+        public Contact PublicChat
         {
-            get { return _users; }
-            set
-            {
-                _users = value;
-                UserListChanged?.Invoke();
-            }
+            get { return _publicChat; }
+            set { _publicChat = value; }
         }
+        private List<LogEntry> EventList
+        {
+            get { return _eventList; }
+            set { _eventList = value; }
+        }
+
         public event Action UserListChanged;
         public event EventHandler<Message> PrivateMessageReceived;
-
+        public event EventHandler<Message> PublicMessageReceived;
         public ServerStateManager()
         {
-            Users = new List<User>();
-
-            Users.Add(new User("Евгений", OnlineStatus.Offline));
-            Users.Add(new User("Яков", OnlineStatus.Offline));
-            Users.Add(new User("Виктория", OnlineStatus.Online));
-            Users.Add(new User("Мария", OnlineStatus.Offline));
-            Users.Add(new User("Ридаль", OnlineStatus.Offline));
-
-
+            Contacts = new List<Contact>();
             Messages = new List<Message>();
-            Messages.Add(new Message(Users[0].Name, Users[2].Name, Users[2].Name + ", Привет от " + Users[0].Name + "!", DateTime.Now));
-            Messages.Add(new Message(Users[1].Name, Users[2].Name, Users[2].Name + ", Привет от " + Users[1].Name + "!", DateTime.Now));
-            Messages.Add(new Message(Users[3].Name, Users[2].Name, Users[2].Name + ", Привет от " + Users[3].Name + "!", DateTime.Now));
-            Messages.Add(new Message(Users[4].Name, Users[2].Name, Users[2].Name + ", Привет от " + Users[4].Name + "!", DateTime.Now));
-            Messages.Add(new Message(Users[2].Name, Users[1].Name, Users[1].Name + ", Привет от " + Users[2].Name + "!", DateTime.Now));
-            Messages.Add(new Message(Users[3].Name, Users[4].Name, Users[4].Name + ", Привет от " + Users[3].Name + "!", DateTime.Now));
-            Messages.Add(new Message(Users[0].Name, Users[3].Name, Users[3].Name + ", Привет от " + Users[0].Name + "!", DateTime.Now));
+            EventList = new List<LogEntry>();
 
-            Messages.Add(new Message(Users[0].Name, Users[2].Name, Users[2].Name + ", Привет от " + Users[0].Name + "!", DateTime.Now));
-            Messages.Add(new Message(Users[1].Name, Users[2].Name, Users[2].Name + ", Привет от " + Users[1].Name + "!", DateTime.Now));
-            Messages.Add(new Message(Users[3].Name, Users[2].Name, Users[2].Name + ", Привет от " + Users[3].Name + "!", DateTime.Now));
-            Messages.Add(new Message(Users[4].Name, Users[2].Name, Users[2].Name + ", Привет от " + Users[4].Name + "!", DateTime.Now));
-            Messages.Add(new Message(Users[2].Name, Users[1].Name, Users[1].Name + ", Привет от " + Users[2].Name + "!", DateTime.Now));
-            Messages.Add(new Message(Users[3].Name, Users[4].Name, Users[4].Name + ", Привет от " + Users[3].Name + "!", DateTime.Now));
-            Messages.Add(new Message(Users[0].Name, Users[3].Name, Users[3].Name + ", Привет от " + Users[0].Name + "!", DateTime.Now));
-        }
+            PublicChat = new Contact("Public chat");
+            Contacts.Add(new Contact("Евгений", OnlineStatus.Offline));
+            Contacts.Add(new Contact("Яков", OnlineStatus.Offline));
+            Contacts.Add(new Contact("Виктория", OnlineStatus.Online));
+            Contacts.Add(new Contact("Мария", OnlineStatus.Offline));
+            Contacts.Add(new Contact("Ридаль", OnlineStatus.Offline));
 
-        public GetContactsResponse GetContacts(string name)
-        {
-            List<User> contactList = new List<User>();
-            contactList = Users.FindAll(user => name != null && name != user.Name);
-
-            if (contactList.Count != 0)
+            foreach (Contact contact in Contacts)
             {
-                return new GetContactsResponse("Success", contactList);
-            }
-            else
-            {
-                return new GetContactsResponse("Empty", new List<User>());
-            }
-        }
-
-        public void AddPrivateMessage(string sender, string receiver, string text, DateTime sendTime)
-        {
-            if (Users.Exists(user => user.Name == sender))
-            {
-                if (Users.Exists(user => user.Name == receiver))
+                if (contact.Title != "Public chat" && !contact.IsGroop())
                 {
-                    Message message = new Message(sender, receiver, text, sendTime);
-                    Messages.Add(message);
-                    PrivateMessageReceived?.Invoke(this, message);
-                }
-                else
-                {
-                    throw new Exception("AddPrivateMessage: Sender '" + receiver + "' does not exist");
+                    PublicChat.Users.Add(contact.Title);
                 }
             }
-            else
+            
+            Messages.Add(new Message(Contacts[0].Title, Contacts[2].Title, Contacts[2].Title + ", Привет от " + Contacts[0].Title + "!", DateTime.Now));
+            Messages.Add(new Message(Contacts[1].Title, Contacts[2].Title, Contacts[2].Title + ", Привет от " + Contacts[1].Title + "!", DateTime.Now));
+            Messages.Add(new Message(Contacts[3].Title, Contacts[2].Title, Contacts[2].Title + ", Привет от " + Contacts[3].Title + "!", DateTime.Now));
+            Messages.Add(new Message(Contacts[4].Title, Contacts[2].Title, Contacts[2].Title + ", Привет от " + Contacts[4].Title + "!", DateTime.Now));
+            Messages.Add(new Message(Contacts[2].Title, Contacts[1].Title, Contacts[1].Title + ", Привет от " + Contacts[2].Title + "!", DateTime.Now));
+            Messages.Add(new Message(Contacts[3].Title, Contacts[4].Title, Contacts[4].Title + ", Привет от " + Contacts[3].Title + "!", DateTime.Now));
+            Messages.Add(new Message(Contacts[0].Title, Contacts[3].Title, Contacts[3].Title + ", Привет от " + Contacts[0].Title + "!", DateTime.Now));
+
+            Messages.Add(new Message(Contacts[0].Title, Contacts[3].Title, Contacts[3].Title + ", Привет от " + Contacts[0].Title + "!", DateTime.Now));
+            Messages.Add(new Message(Contacts[1].Title, Contacts[3].Title, Contacts[3].Title + ", Привет от " + Contacts[1].Title + "!", DateTime.Now));
+            Messages.Add(new Message(Contacts[3].Title, Contacts[3].Title, Contacts[3].Title + ", Привет от " + Contacts[3].Title + "!", DateTime.Now));
+            Messages.Add(new Message(Contacts[4].Title, Contacts[3].Title, Contacts[3].Title + ", Привет от " + Contacts[4].Title + "!", DateTime.Now));
+            Messages.Add(new Message(Contacts[2].Title, Contacts[2].Title, Contacts[2].Title + ", Привет от " + Contacts[2].Title + "!", DateTime.Now));
+            Messages.Add(new Message(Contacts[3].Title, Contacts[0].Title, Contacts[0].Title + ", Привет от " + Contacts[3].Title + "!", DateTime.Now));
+            Messages.Add(new Message(Contacts[0].Title, Contacts[4].Title, Contacts[4].Title + ", Привет от " + Contacts[0].Title + "!", DateTime.Now));
+
+            Messages.Add(new Message(Contacts[0].Title, PublicChat.Title, "Привет всем от " + Contacts[0].Title + "!", DateTime.Now));
+            Messages.Add(new Message(Contacts[1].Title, PublicChat.Title, "Привет всем от " + Contacts[1].Title + "!", DateTime.Now));
+            Messages.Add(new Message(Contacts[2].Title, PublicChat.Title, "Привет всем от " + Contacts[2].Title + "!", DateTime.Now));
+
+            foreach (Contact contact in Contacts)
             {
-                throw new Exception("AddPrivateMessage: Sender '" + sender + "' does not exist");
+                EventList.Add(new LogEntry("New user joined", contact.Title + " is joined", DateTime.Now));
+            }
+            foreach (Message message in Messages)
+            {
+                EventList.Add(new LogEntry("Private message", message.Sender + " sent а private message to " + message.Receiver, message.SendTime));
             }
         }
-
-        //public void AddPrivateMessage(string sender, string text)
-        //{
-        //    for (int i = 0; i < Users.Count; i++)
-        //    {
-        //        //Users[i].MessageList.Add(new Message(sender, Users[i].Name, text, true));
-        //    }
-        //}
-
-        public GetPrivateMessageListResponse GetPrivateMessageList(string name)
-        {
-            List<Message> messages = new List<Message>();
-
-            foreach (User user in Users)
-            {
-                foreach (Message message in Messages)
-                {
-                    if ((message.Sender == name || message.Receiver == name) && !message.IsGroopChatMessage)
-                    {
-                        messages.Add(message);
-                    }
-                }
-            }
-            if (messages.Count != 0)
-            {
-                return new GetPrivateMessageListResponse("Success", messages);
-            }
-            else
-            {
-                return new GetPrivateMessageListResponse("Empty", messages);
-            }
-        }
-        //public GetPublicMessageListResponse GetPublicMessageList(string name)
-        //{
-        //    List<Message> messages = new List<Message>();
-
-        //    foreach (User user in Users)
-        //    {
-        //        if (user.Name == name)
-        //        {
-        //            foreach (Message message in user.MessageList)
-        //            {
-        //                if (!message.IsGroopChatMessage)
-        //                    messages.Add(message);
-        //            }
-        //        }
-        //    }
-
-        //    if (messages.Count != 0)
-        //    {
-        //        return new GetPublicMessageListResponse("Success", messages);
-        //    }
-        //    else
-        //    {
-        //        return new GetPublicMessageListResponse("Empty", messages);
-        //    }
-        //}
-
-        //public List<Message> GetPublicMessageList(User me)
-        //{
-        //    List<Message> messages = new List<Message>();
-
-        //    for (int i = 0; i < me.MessageList.Count; i++)
-        //    {
-        //        if (me.MessageList[i].IsGroopChatMessage == true)
-        //        {
-        //            messages.Add(me.MessageList[i]);
-        //        }
-        //    }
-
-        //    return messages;
-        //}
         public AuthorizationResponse AuthorizeUser(string name)
         {
             bool isUserAlreadyExists = false;
             bool isNameTaken = false;
 
-            for (int i = 0; i < Users.Count; i++)
+            foreach (Contact contact in Contacts)
             {
-                if (Users[i].Name == name)
+                if (contact.Title == name)
                 {
                     isUserAlreadyExists = true;
 
-                    if (Users[i].IsOnline == OnlineStatus.Offline)
+                    if (contact.IsOnline == OnlineStatus.Offline)
                     {
-                        Users[i].IsOnline = OnlineStatus.Online;
+                        contact.IsOnline = OnlineStatus.Online;
                     }
                     else
                     {
@@ -216,7 +130,7 @@ namespace MessengerServer
             }
             else
             {
-                Users.Add(new User(name, OnlineStatus.Online));
+                Contacts.Add(new Contact(name, OnlineStatus.Online));
                 return new AuthorizationResponse("NewUserAdded", name);
             }
         }
@@ -224,13 +138,97 @@ namespace MessengerServer
 
         public void SetUserOffline(string name)
         {
-            foreach (User user in Users)
+            foreach (Contact contact in Contacts)
             {
-                if (user.Name == name)
+                if (contact.Title == name)
                 {
-                    user.IsOnline = OnlineStatus.Offline;
+                    contact.IsOnline = OnlineStatus.Offline;
                 }
             }
+        }
+        public GetContactsResponse GetContacts(string name)
+        {
+            List<Contact> contactList = new List<Contact>();
+            contactList = Contacts.FindAll(contact => contact.Title != name);
+
+            if (contactList.Count != 0)
+            {
+                return new GetContactsResponse("Success", contactList);
+            }
+            else
+            {
+                return new GetContactsResponse("Empty", new List<Contact>());
+            }
+        }
+
+        public void AddPrivateMessage(string sender, string receiver, string text, DateTime sendTime)
+        {
+            if (Contacts.Exists(contact => contact.Title == sender && !contact.IsGroop()))
+            {
+                if (Contacts.Exists(contact => contact.Title == receiver && !contact.IsGroop()))
+                {
+                    Message message = new Message(sender, receiver, text, sendTime);
+                    Messages.Add(message);
+                    PrivateMessageReceived?.Invoke(this, message);
+                }
+                else
+                {
+                    throw new Exception("AddPrivateMessage: Sender '" + receiver + "' does not exist");
+                }
+            }
+            else
+            {
+                throw new Exception("AddPrivateMessage: Sender '" + sender + "' does not exist");
+            }
+        }
+        public void AddPublicMessage(string sender, string text, DateTime sendTime)
+        {
+            if (Contacts.Exists(contact => contact.Title == sender && !contact.IsGroop()))
+            {            
+                    Message message = new Message(sender, PublicChat.Title, text, sendTime);
+                    Messages.Add(message);
+                    PublicMessageReceived?.Invoke(this, message);
+            }
+            else
+            {
+                throw new Exception("AddPublicMessage: Sender '" + sender + "' does not exist");
+            }
+        }
+
+        public GetPrivateMessageListResponse GetPrivateMessageList(string name)
+        {
+            List<Message> messages = new List<Message>();
+
+            if (Contacts.Exists(contact => contact.Title == name && !contact.IsGroop()))
+            {
+                messages = Messages.FindAll(message => message.Sender == name || message.Receiver == name);
+            }
+
+            if (messages.Count != 0)
+            {
+                return new GetPrivateMessageListResponse("Success", messages);
+            }
+            else
+            {
+                return new GetPrivateMessageListResponse("Empty", messages);
+            }
+        }
+        public GetPublicMessageListResponse GetPublicMessageList()
+        {
+            List<Message> messages = Messages.FindAll(message => message.Receiver == "Public chat");
+
+            if (messages.Count != 0)
+            {
+                return new GetPublicMessageListResponse("Success", messages);
+            }
+            else
+            {
+                return new GetPublicMessageListResponse("Empty", messages);
+            }
+        }
+        public GetEventListResponse GetEventLog()
+        {
+            return new GetEventListResponse("Success", EventList);
         }
     }
 }
