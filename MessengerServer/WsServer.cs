@@ -134,7 +134,7 @@ namespace MessengerServer
                 case nameof(GetEventListRequest):
 
                     GetEventListRequest getEventListRequest = JsonConvert.DeserializeObject<GetEventListRequest>(container.Payload.ToString());
-                    GetEventListResponse getEventListResponse = _serverState.GetEventLog();
+                    GetEventListResponse getEventListResponse = _serverState.GetEventLog(getEventListRequest.From, getEventListRequest.To);
                     connection.Send(getEventListResponse.GetContainer());
                     break;
             }

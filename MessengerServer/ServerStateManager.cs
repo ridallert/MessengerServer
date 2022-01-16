@@ -226,9 +226,11 @@ namespace MessengerServer
                 return new GetPublicMessageListResponse("Empty", messages);
             }
         }
-        public GetEventListResponse GetEventLog()
-        {
-            return new GetEventListResponse("Success", EventList);
+        public GetEventListResponse GetEventLog(DateTime from, DateTime to)
+        {        
+            List<LogEntry> logResponseList = EventList.FindAll(entry => entry.DateTime >= from && entry.DateTime <= to.AddDays(1));
+
+            return new GetEventListResponse("Success", logResponseList);
         }
     }
 }
