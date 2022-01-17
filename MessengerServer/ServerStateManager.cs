@@ -65,7 +65,7 @@ namespace MessengerServer
                     PublicChat.Users.Add(contact.Title);
                 }
             }
-            
+
             Messages.Add(new Message(Contacts[0].Title, Contacts[2].Title, Contacts[2].Title + ", Привет от " + Contacts[0].Title + "!", DateTime.Now));
             Messages.Add(new Message(Contacts[1].Title, Contacts[2].Title, Contacts[2].Title + ", Привет от " + Contacts[1].Title + "!", DateTime.Now));
             Messages.Add(new Message(Contacts[3].Title, Contacts[2].Title, Contacts[2].Title + ", Привет от " + Contacts[3].Title + "!", DateTime.Now));
@@ -86,13 +86,16 @@ namespace MessengerServer
             Messages.Add(new Message(Contacts[1].Title, PublicChat.Title, "Привет всем от " + Contacts[1].Title + "!", DateTime.Now));
             Messages.Add(new Message(Contacts[2].Title, PublicChat.Title, "Привет всем от " + Contacts[2].Title + "!", DateTime.Now));
 
+            DateTime startDate = new DateTime(2022, 1, 12, 16, 45, 58);
+
             foreach (Contact contact in Contacts)
             {
-                EventList.Add(new LogEntry("New user joined", contact.Title + " is joined", DateTime.Now));
+                startDate = startDate.AddDays(1);
+                EventList.Add(new LogEntry(EventType.Event, contact.Title + " is joined", startDate));
             }
             foreach (Message message in Messages)
             {
-                EventList.Add(new LogEntry("Private message", message.Sender + " sent а private message to " + message.Receiver, message.SendTime));
+                EventList.Add(new LogEntry(EventType.Message, message.Sender + " sent а private message to " + message.Receiver, message.SendTime));
             }
         }
         public AuthorizationResponse AuthorizeUser(string name)
@@ -184,10 +187,10 @@ namespace MessengerServer
         public void AddPublicMessage(string sender, string text, DateTime sendTime)
         {
             if (Contacts.Exists(contact => contact.Title == sender && !contact.IsGroop()))
-            {            
-                    Message message = new Message(sender, PublicChat.Title, text, sendTime);
-                    Messages.Add(message);
-                    PublicMessageReceived?.Invoke(this, message);
+            {
+                Message message = new Message(sender, PublicChat.Title, text, sendTime);
+                Messages.Add(message);
+                PublicMessageReceived?.Invoke(this, message);
             }
             else
             {
@@ -227,7 +230,7 @@ namespace MessengerServer
             }
         }
         public GetEventListResponse GetEventLog(DateTime from, DateTime to)
-        {        
+        {
             List<LogEntry> logResponseList = EventList.FindAll(entry => entry.DateTime >= from && entry.DateTime <= to.AddDays(1));
 
             return new GetEventListResponse("Success", logResponseList);

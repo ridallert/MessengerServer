@@ -50,6 +50,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Common\Contact.cs" />
+    <Compile Include="Common\EventType.cs" />
     <Compile Include="Common\LogEntry.cs" />
     <Compile Include="Common\Message.cs" />
     <Compile Include="NetworkManager.cs" />
