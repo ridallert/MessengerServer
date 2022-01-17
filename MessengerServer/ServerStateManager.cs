@@ -100,6 +100,11 @@ namespace MessengerServer
         }
         public AuthorizationResponse AuthorizeUser(string name)
         {
+            if (name == "Public chat") ///////////////////////////////
+            {
+                return new AuthorizationResponse("NameIsTaken", name);
+            }
+
             bool isUserAlreadyExists = false;
             bool isNameTaken = false;
 
