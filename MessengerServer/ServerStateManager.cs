@@ -5,6 +5,8 @@ using MessengerServer.Network.Responses;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Data.Common;
+using System.Data.Entity;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,7 +15,7 @@ namespace MessengerServer
 {
     public class ServerStateManager
     {
-        private ServerStateContext _dataBase; ////////
+        private Repository _repository;
 
         private List<Contact> _contacts;
         private List<Message> _messages;
@@ -49,22 +51,29 @@ namespace MessengerServer
         public event EventHandler<Message> PublicMessageReceived;
         public ServerStateManager()
         {
-            _dataBase = new ServerStateContext(); ////////
-
+            _repository = new Repository();
+            //_repository.Create();   AttachDbFilename='|DataDirectory|\Bookstore.mdf'
+            //.\SQLEXPRESS;AttachDbFilename='|DataDirectory|\Bookstore.mdf';
+            string str = AppDomain.CurrentDomain.BaseDirectory;
+            
+            
+            _repository.Connect("Data Source=(localdb)\\MSSQLLocalDB; Initial Catalog=ServerState; Integrated Security=True;");
+            
             Contacts = new List<Contact>();
             Messages = new List<Message>();
             EventList = new List<LogEntry>();
 
             PublicChat = new Contact("Public chat");
+
+            //DB Initialization
             Contacts.Add(new Contact("Евгений", OnlineStatus.Offline));
             Contacts.Add(new Contact("Яков", OnlineStatus.Offline));
             Contacts.Add(new Contact("Виктория", OnlineStatus.Online));
             Contacts.Add(new Contact("Мария", OnlineStatus.Offline));
             Contacts.Add(new Contact("Ридаль", OnlineStatus.Offline));
 
+           
 
-
-            _dataBase.Contacts.AddRange(Contacts); ////////
 
             foreach (Contact contact in Contacts)
             {
@@ -93,8 +102,7 @@ namespace MessengerServer
             Messages.Add(new Message(Contacts[0].Title, PublicChat.Title, "Привет всем от " + Contacts[0].Title + "!", DateTime.Now));
             Messages.Add(new Message(Contacts[1].Title, PublicChat.Title, "Привет всем от " + Contacts[1].Title + "!", DateTime.Now));
             Messages.Add(new Message(Contacts[2].Title, PublicChat.Title, "Привет всем от " + Contacts[2].Title + "!", DateTime.Now));
-
-            _dataBase.Messages.AddRange(Messages); ////////
+            
 
             DateTime startDate = new DateTime(2022, 1, 12, 16, 45, 58);
 
@@ -107,9 +115,10 @@ namespace MessengerServer
             {
                 EventList.Add(new LogEntry(EventType.Message, message.Sender + " sent а private message to " + message.Receiver, message.SendTime));
             }
-
-            _dataBase.EventList.AddRange(EventList); ////////
-            _dataBase.SaveChanges(); ////////
+            
+            _repository.AddContacts(Contacts);
+            _repository.AddMessages(Messages);
+            _repository.AddLogEntries(EventList);
         }
         public AuthorizationResponse AuthorizeUser(string name)
         {

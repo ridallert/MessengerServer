@@ -13,6 +13,6 @@ namespace MessengerServer
         public DbSet<Message> Messages { get; set; }
         public DbSet<Contact> Contacts { get; set; }
         public DbSet<LogEntry> EventList { get; set; }
-        public ServerStateContext() : base("DBConnection") { }
+        public ServerStateContext(string connectionString) : base(connectionString) { }
     }
 }
