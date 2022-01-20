@@ -54,8 +54,7 @@ namespace MessengerServer
             _repository = new Repository();
             //_repository.Create();   AttachDbFilename='|DataDirectory|\Bookstore.mdf'
             //.\SQLEXPRESS;AttachDbFilename='|DataDirectory|\Bookstore.mdf';
-            string str = AppDomain.CurrentDomain.BaseDirectory;
-            
+            //string str = AppDomain.CurrentDomain.BaseDirectory;
             
             _repository.Connect("Data Source=(localdb)\\MSSQLLocalDB; Initial Catalog=ServerState; Integrated Security=True;");
             
@@ -65,60 +64,63 @@ namespace MessengerServer
 
             PublicChat = new Contact("Public chat");
 
-            //DB Initialization
-            Contacts.Add(new Contact("Евгений", OnlineStatus.Offline));
-            Contacts.Add(new Contact("Яков", OnlineStatus.Offline));
-            Contacts.Add(new Contact("Виктория", OnlineStatus.Online));
-            Contacts.Add(new Contact("Мария", OnlineStatus.Offline));
-            Contacts.Add(new Contact("Ридаль", OnlineStatus.Offline));
+            Contacts = _repository.GetContacts();
 
-           
+            //DB INITIALIZATION
 
+            //Contacts.Add(new Contact("Евгений", OnlineStatus.Offline));
+            //Contacts.Add(new Contact("Яков", OnlineStatus.Offline));
+            //Contacts.Add(new Contact("Виктория", OnlineStatus.Online));
+            //Contacts.Add(new Contact("Мария", OnlineStatus.Offline));
+            //Contacts.Add(new Contact("Ридаль", OnlineStatus.Offline));
 
-            foreach (Contact contact in Contacts)
-            {
-                if (contact.Title != "Public chat" && !contact.IsGroop())
-                {
-                    PublicChat.Users.Add(contact.Title);
-                }
-            }
+            //foreach (Contact contact in Contacts)
+            //{
+            //    if (contact.Title != "Public chat" && !contact.IsGroop())
+            //    {
+            //        PublicChat.Users.Add(contact.Title);
+            //    }
+            //}
 
-            Messages.Add(new Message(Contacts[0].Title, Contacts[2].Title, Contacts[2].Title + ", Привет от " + Contacts[0].Title + "!", DateTime.Now));
-            Messages.Add(new Message(Contacts[1].Title, Contacts[2].Title, Contacts[2].Title + ", Привет от " + Contacts[1].Title + "!", DateTime.Now));
-            Messages.Add(new Message(Contacts[3].Title, Contacts[2].Title, Contacts[2].Title + ", Привет от " + Contacts[3].Title + "!", DateTime.Now));
-            Messages.Add(new Message(Contacts[4].Title, Contacts[2].Title, Contacts[2].Title + ", Привет от " + Contacts[4].Title + "!", DateTime.Now));
-            Messages.Add(new Message(Contacts[2].Title, Contacts[1].Title, Contacts[1].Title + ", Привет от " + Contacts[2].Title + "!", DateTime.Now));
-            Messages.Add(new Message(Contacts[3].Title, Contacts[4].Title, Contacts[4].Title + ", Привет от " + Contacts[3].Title + "!", DateTime.Now));
-            Messages.Add(new Message(Contacts[0].Title, Contacts[3].Title, Contacts[3].Title + ", Привет от " + Contacts[0].Title + "!", DateTime.Now));
+            //Messages.Add(new Message(Contacts[0].Title, Contacts[2].Title, Contacts[2].Title + ", Привет от " + Contacts[0].Title + "!", DateTime.Now));
+            //Messages.Add(new Message(Contacts[1].Title, Contacts[2].Title, Contacts[2].Title + ", Привет от " + Contacts[1].Title + "!", DateTime.Now));
+            //Messages.Add(new Message(Contacts[3].Title, Contacts[2].Title, Contacts[2].Title + ", Привет от " + Contacts[3].Title + "!", DateTime.Now));
+            //Messages.Add(new Message(Contacts[4].Title, Contacts[2].Title, Contacts[2].Title + ", Привет от " + Contacts[4].Title + "!", DateTime.Now));
+            //Messages.Add(new Message(Contacts[2].Title, Contacts[1].Title, Contacts[1].Title + ", Привет от " + Contacts[2].Title + "!", DateTime.Now));
+            //Messages.Add(new Message(Contacts[3].Title, Contacts[4].Title, Contacts[4].Title + ", Привет от " + Contacts[3].Title + "!", DateTime.Now));
+            //Messages.Add(new Message(Contacts[0].Title, Contacts[3].Title, Contacts[3].Title + ", Привет от " + Contacts[0].Title + "!", DateTime.Now));
 
-            Messages.Add(new Message(Contacts[0].Title, Contacts[3].Title, Contacts[3].Title + ", Привет от " + Contacts[0].Title + "!", DateTime.Now));
-            Messages.Add(new Message(Contacts[1].Title, Contacts[3].Title, Contacts[3].Title + ", Привет от " + Contacts[1].Title + "!", DateTime.Now));
-            Messages.Add(new Message(Contacts[3].Title, Contacts[3].Title, Contacts[3].Title + ", Привет от " + Contacts[3].Title + "!", DateTime.Now));
-            Messages.Add(new Message(Contacts[4].Title, Contacts[3].Title, Contacts[3].Title + ", Привет от " + Contacts[4].Title + "!", DateTime.Now));
-            Messages.Add(new Message(Contacts[2].Title, Contacts[2].Title, Contacts[2].Title + ", Привет от " + Contacts[2].Title + "!", DateTime.Now));
-            Messages.Add(new Message(Contacts[3].Title, Contacts[0].Title, Contacts[0].Title + ", Привет от " + Contacts[3].Title + "!", DateTime.Now));
-            Messages.Add(new Message(Contacts[0].Title, Contacts[4].Title, Contacts[4].Title + ", Привет от " + Contacts[0].Title + "!", DateTime.Now));
+            //Messages.Add(new Message(Contacts[0].Title, Contacts[3].Title, Contacts[3].Title + ", Привет от " + Contacts[0].Title + "!", DateTime.Now));
+            //Messages.Add(new Message(Contacts[1].Title, Contacts[3].Title, Contacts[3].Title + ", Привет от " + Contacts[1].Title + "!", DateTime.Now));
+            //Messages.Add(new Message(Contacts[3].Title, Contacts[3].Title, Contacts[3].Title + ", Привет от " + Contacts[3].Title + "!", DateTime.Now));
+            //Messages.Add(new Message(Contacts[4].Title, Contacts[3].Title, Contacts[3].Title + ", Привет от " + Contacts[4].Title + "!", DateTime.Now));
+            //Messages.Add(new Message(Contacts[2].Title, Contacts[2].Title, Contacts[2].Title + ", Привет от " + Contacts[2].Title + "!", DateTime.Now));
+            //Messages.Add(new Message(Contacts[3].Title, Contacts[0].Title, Contacts[0].Title + ", Привет от " + Contacts[3].Title + "!", DateTime.Now));
+            //Messages.Add(new Message(Contacts[0].Title, Contacts[4].Title, Contacts[4].Title + ", Привет от " + Contacts[0].Title + "!", DateTime.Now));
 
-            Messages.Add(new Message(Contacts[0].Title, PublicChat.Title, "Привет всем от " + Contacts[0].Title + "!", DateTime.Now));
-            Messages.Add(new Message(Contacts[1].Title, PublicChat.Title, "Привет всем от " + Contacts[1].Title + "!", DateTime.Now));
-            Messages.Add(new Message(Contacts[2].Title, PublicChat.Title, "Привет всем от " + Contacts[2].Title + "!", DateTime.Now));
+            //Messages.Add(new Message(Contacts[0].Title, PublicChat.Title, "Привет всем от " + Contacts[0].Title + "!", DateTime.Now));
+            //Messages.Add(new Message(Contacts[1].Title, PublicChat.Title, "Привет всем от " + Contacts[1].Title + "!", DateTime.Now));
+            //Messages.Add(new Message(Contacts[2].Title, PublicChat.Title, "Привет всем от " + Contacts[2].Title + "!", DateTime.Now));
             
 
-            DateTime startDate = new DateTime(2022, 1, 12, 16, 45, 58);
+            //DateTime startDate = new DateTime(2022, 1, 12, 16, 45, 58);
 
-            foreach (Contact contact in Contacts)
-            {
-                startDate = startDate.AddDays(1);
-                EventList.Add(new LogEntry(EventType.Event, contact.Title + " is joined", startDate));
-            }
-            foreach (Message message in Messages)
-            {
-                EventList.Add(new LogEntry(EventType.Message, message.Sender + " sent а private message to " + message.Receiver, message.SendTime));
-            }
+            //foreach (Contact contact in Contacts)
+            //{
+            //    startDate = startDate.AddDays(1);
+            //    EventList.Add(new LogEntry(EventType.Event, contact.Title + " is joined", startDate));
+            //}
+            //foreach (Message message in Messages)
+            //{
+            //    EventList.Add(new LogEntry(EventType.Message, message.Sender + " sent а private message to " + message.Receiver, message.SendTime));
+            //}
             
-            _repository.AddContacts(Contacts);
-            _repository.AddMessages(Messages);
-            _repository.AddLogEntries(EventList);
+            //_repository.AddContacts(Contacts);
+            //_repository.AddMessages(Messages);
+            //_repository.AddLogEntries(EventList);
+
+            //DB INITIALIZATION END
+
         }
         public AuthorizationResponse AuthorizeUser(string name)
         {

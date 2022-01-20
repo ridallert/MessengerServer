@@ -17,7 +17,7 @@ namespace MessengerServer
             {
                 _dataBase = new ServerStateContext(connectionString);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Console.WriteLine(ex);
                 Console.ReadLine();
@@ -25,7 +25,16 @@ namespace MessengerServer
         }
         public List<Contact> GetContacts()
         {
-            return new List<Contact>();
+            //var list = _dataBase.Contacts;
+            var contacts = _dataBase.Contacts;
+            List<Contact> contactList = new List<Contact>();
+
+            foreach (Contact contact in contacts)
+            {
+                contactList.Add(contact);
+                //contactList.Add(new Contact(contact.))
+            }
+            return contactList;
         }
         public List<Message> GetMessages()
         {
