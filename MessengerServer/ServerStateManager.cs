@@ -15,132 +15,187 @@ namespace MessengerServer
 {
     public class ServerStateManager
     {
-        private Repository _repository;
+        private DataBaseManager _dataBaseManager;
 
-        private List<Contact> _contacts;
-        private List<Message> _messages;
-        private Contact _publicChat;
-        private List<LogEntry> _eventList;
-        public List<Contact> Contacts
-        {
-            get { return _contacts; }
-            set
-            {
-                _contacts = value;
-                UserListChanged?.Invoke();
-            }
-        }
-        public List<Message> Messages
-        {
-            get { return _messages; }
-            set { _messages = value; }
-        }
-        public Contact PublicChat
-        {
-            get { return _publicChat; }
-            set { _publicChat = value; }
-        }
-        private List<LogEntry> EventList
-        {
-            get { return _eventList; }
-            set { _eventList = value; }
-        }
+        public List<User> Users { get; set; }
+        public List<Chat> Chats { get; set; }
+        public List<Message> Messages { get; set; }
+        private List<LogEntry> EventList { get; set; }
 
-        public event Action UserListChanged;
-        public event EventHandler<Message> PrivateMessageReceived;
-        public event EventHandler<Message> PublicMessageReceived;
+        //public event Action UserListChanged;
+        //public event Action<Message> MessageReceived;
+
         public ServerStateManager()
         {
-            _repository = new Repository();
+            _dataBaseManager = new DataBaseManager();
+
+            Users = new List<User>();
+            Chats = new List<Chat>();
+            //Messages = new List<Message>();
+            EventList = new List<LogEntry>();
+
             //_repository.Create();   AttachDbFilename='|DataDirectory|\Bookstore.mdf'
             //.\SQLEXPRESS;AttachDbFilename='|DataDirectory|\Bookstore.mdf';
             //string str = AppDomain.CurrentDomain.BaseDirectory;
-            
-            _repository.Connect("Data Source=(localdb)\\MSSQLLocalDB; Initial Catalog=ServerState; Integrated Security=True;");
-            
-            Contacts = new List<Contact>();
-            Messages = new List<Message>();
-            EventList = new List<LogEntry>();
 
-            PublicChat = new Contact("Public chat");
-
-            Contacts = _repository.GetContacts();
+            _dataBaseManager.Connect("Data Source=(localdb)\\MSSQLLocalDB; Initial Catalog=ServerState; Integrated Security=True;");
 
             //DB INITIALIZATION
 
-            //Contacts.Add(new Contact("Евгений", OnlineStatus.Offline));
-            //Contacts.Add(new Contact("Яков", OnlineStatus.Offline));
-            //Contacts.Add(new Contact("Виктория", OnlineStatus.Online));
-            //Contacts.Add(new Contact("Мария", OnlineStatus.Offline));
-            //Contacts.Add(new Contact("Ридаль", OnlineStatus.Offline));
+            Users.Add(new User("Евгений", OnlineStatus.Offline));
+            Users.Add(new User("Яков", OnlineStatus.Offline));
+            Users.Add(new User("Виктория", OnlineStatus.Offline));
+            Users.Add(new User("Мария", OnlineStatus.Offline));
+            Users.Add(new User("Ридаль", OnlineStatus.Offline));
 
-            //foreach (Contact contact in Contacts)
+            Chats.Add(new Chat("Public chat", Users));
+
+            Chats[0].Messages.Add(new Message(Users[0], Chats[0].ChatId, Chats[0], $"Привет всем от {Users[0].Name}!", DateTime.Now));
+            Chats[0].Messages.Add(new Message(Users[1], Chats[0].ChatId, Chats[0], $"Привет всем от {Users[1].Name}!", DateTime.Now));
+            Chats[0].Messages.Add(new Message(Users[2], Chats[0].ChatId, Chats[0], $"Привет всем от {Users[2].Name}!", DateTime.Now));
+
+            Chats.Add(new Chat(Users[0], Users[2]));
+            Chats[1].Messages.Add(new Message(Users[0], Chats[1].ChatId, Chats[1], $"{Users[2].Name}, привет от {Users[0].Name}!", DateTime.Now));
+
+            Chats.Add(new Chat(Users[1], Users[2]));
+            Chats[2].Messages.Add(new Message(Users[1], Chats[2].ChatId, Chats[2], $"{Users[2].Name}, привет от {Users[1].Name}!", DateTime.Now));
+
+            Chats.Add(new Chat(Users[3], Users[2]));
+            Chats[3].Messages.Add(new Message(Users[3], Chats[2].ChatId, Chats[3], $"{Users[2].Name}, привет от {Users[1].Name}!", DateTime.Now));
+
+            Chats.Add(new Chat("ЕвгЯкРид", new List<User> { Users[0], Users[1], Users[4] }));
+            Chats[4].Messages.Add(new Message(Users[4], Chats[4].ChatId, Chats[4], Users[0].Name + ", " + Users[1].Name + ", Привет от " + Users[4].Name + "!", DateTime.Now));
+
+            Chats.Add(new Chat(Users[0], Users[4]));
+            Chats[5].Messages.Add(new Message(Users[0], Chats[5].ChatId, Chats[5], $"{Users[4].Name}, привет от {Users[0].Name}!", DateTime.Now));
+
+            Chats.Add(new Chat(Users[1], Users[4]));
+            Chats[6].Messages.Add(new Message(Users[1], Chats[6].ChatId, Chats[6], $"{Users[4].Name}, привет от {Users[1].Name}!", DateTime.Now));
+            Chats[6].Messages.Add(new Message(Users[4], Chats[6].ChatId, Chats[6], $"{Users[1].Name}, привет от {Users[4].Name}!", DateTime.Now));
+
+            Chats.Add(new Chat(Users[2], Users[4]));
+            Chats[7].Messages.Add(new Message(Users[2], Chats[7].ChatId, Chats[7], $"{Users[4].Name}, привет от {Users[2].Name}!", DateTime.Now));
+            Chats[7].Messages.Add(new Message(Users[4], Chats[7].ChatId, Chats[7], $"{Users[2].Name}, привет от {Users[4].Name}!", DateTime.Now));
+
+            Chats.Add(new Chat(Users[3], Users[4]));
+            Chats[8].Messages.Add(new Message(Users[3], Chats[8].ChatId, Chats[8], $"{Users[4].Name}, привет от {Users[3].Name}!", DateTime.Now));
+            Chats[8].Messages.Add(new Message(Users[4], Chats[8].ChatId, Chats[8], $"{Users[3].Name}, привет от {Users[4].Name}!", DateTime.Now));
+
+            DateTime startDate = new DateTime(2022, 1, 12, 16, 45, 58);
+
+            foreach (User user in Users)
+            {
+                startDate = startDate.AddDays(1);
+                EventList.Add(new LogEntry(EventType.Event, user.Name + " is joined", startDate));
+            }
+            foreach (Chat chat in Chats)
+            {
+                if (chat.Users.Count > 2)
+                {
+                    foreach (Message message in chat.Messages)
+                    {
+                        EventList.Add(new LogEntry(EventType.Message, $"{message.Sender.Name} sent а private message in '{chat.Title}' group chat", message.SendTime));
+                    }
+                }
+                else
+                {
+                    foreach (Message message in chat.Messages)
+                    {
+                        EventList.Add(new LogEntry(EventType.Message, $"{message.Sender.Name} sent а private message to {chat.Users.Find(user => user.Name != message.Sender.Name).Name}", message.SendTime));
+                    }
+                }
+            }
+            //foreach (Chat chat in Chats)
             //{
-            //    if (contact.Title != "Public chat" && !contact.IsGroop())
-            //    {
-            //        PublicChat.Users.Add(contact.Title);
-            //    }
+            //    Messages.AddRange(chat.Messages);
             //}
 
-            //Messages.Add(new Message(Contacts[0].Title, Contacts[2].Title, Contacts[2].Title + ", Привет от " + Contacts[0].Title + "!", DateTime.Now));
-            //Messages.Add(new Message(Contacts[1].Title, Contacts[2].Title, Contacts[2].Title + ", Привет от " + Contacts[1].Title + "!", DateTime.Now));
-            //Messages.Add(new Message(Contacts[3].Title, Contacts[2].Title, Contacts[2].Title + ", Привет от " + Contacts[3].Title + "!", DateTime.Now));
-            //Messages.Add(new Message(Contacts[4].Title, Contacts[2].Title, Contacts[2].Title + ", Привет от " + Contacts[4].Title + "!", DateTime.Now));
-            //Messages.Add(new Message(Contacts[2].Title, Contacts[1].Title, Contacts[1].Title + ", Привет от " + Contacts[2].Title + "!", DateTime.Now));
-            //Messages.Add(new Message(Contacts[3].Title, Contacts[4].Title, Contacts[4].Title + ", Привет от " + Contacts[3].Title + "!", DateTime.Now));
-            //Messages.Add(new Message(Contacts[0].Title, Contacts[3].Title, Contacts[3].Title + ", Привет от " + Contacts[0].Title + "!", DateTime.Now));
-
-            //Messages.Add(new Message(Contacts[0].Title, Contacts[3].Title, Contacts[3].Title + ", Привет от " + Contacts[0].Title + "!", DateTime.Now));
-            //Messages.Add(new Message(Contacts[1].Title, Contacts[3].Title, Contacts[3].Title + ", Привет от " + Contacts[1].Title + "!", DateTime.Now));
-            //Messages.Add(new Message(Contacts[3].Title, Contacts[3].Title, Contacts[3].Title + ", Привет от " + Contacts[3].Title + "!", DateTime.Now));
-            //Messages.Add(new Message(Contacts[4].Title, Contacts[3].Title, Contacts[3].Title + ", Привет от " + Contacts[4].Title + "!", DateTime.Now));
-            //Messages.Add(new Message(Contacts[2].Title, Contacts[2].Title, Contacts[2].Title + ", Привет от " + Contacts[2].Title + "!", DateTime.Now));
-            //Messages.Add(new Message(Contacts[3].Title, Contacts[0].Title, Contacts[0].Title + ", Привет от " + Contacts[3].Title + "!", DateTime.Now));
-            //Messages.Add(new Message(Contacts[0].Title, Contacts[4].Title, Contacts[4].Title + ", Привет от " + Contacts[0].Title + "!", DateTime.Now));
-
-            //Messages.Add(new Message(Contacts[0].Title, PublicChat.Title, "Привет всем от " + Contacts[0].Title + "!", DateTime.Now));
-            //Messages.Add(new Message(Contacts[1].Title, PublicChat.Title, "Привет всем от " + Contacts[1].Title + "!", DateTime.Now));
-            //Messages.Add(new Message(Contacts[2].Title, PublicChat.Title, "Привет всем от " + Contacts[2].Title + "!", DateTime.Now));
-            
-
-            //DateTime startDate = new DateTime(2022, 1, 12, 16, 45, 58);
-
-            //foreach (Contact contact in Contacts)
+            //_dataBaseManager.AddUsers(Users);
+            //_dataBaseManager.AddChats(Chats);
+            //foreach (Chat chat in Chats)
             //{
-            //    startDate = startDate.AddDays(1);
-            //    EventList.Add(new LogEntry(EventType.Event, contact.Title + " is joined", startDate));
+            //    _dataBaseManager.AddMessages(Messages);
             //}
-            //foreach (Message message in Messages)
-            //{
-            //    EventList.Add(new LogEntry(EventType.Message, message.Sender + " sent а private message to " + message.Receiver, message.SendTime));
-            //}
-            
-            //_repository.AddContacts(Contacts);
-            //_repository.AddMessages(Messages);
-            //_repository.AddLogEntries(EventList);
+
+            //_dataBaseManager.AddLogEntries(EventList);
 
             //DB INITIALIZATION END
 
+            //Users = _dataBaseManager.GetUsers();
+            //GroupChats = _dataBaseManager.GetGroupChats();
+            //PrivateMessages = _dataBaseManager.GetPrivateMessages();
+            //GroupMessages = _dataBaseManager.GetGroupMessages();
+            //EventList = _dataBaseManager.GetEventLog();
         }
-        public AuthorizationResponse AuthorizeUser(string name)
+
+        public List<Chat> GetChatList(uint userId)
         {
-            if (name == "Public chat") ///////////////////////////////
+            return Chats.FindAll(chat => chat.Users.Exists(user => user.UserId == userId));
+        }
+
+        public CreateNewChatResponse CreateNewChat(string title, List<int> userIdList)
+        {
+            Chat newChat = new Chat();
+            int userCounter = 0;
+            foreach (User user in Users)
             {
-                return new AuthorizationResponse("NameIsTaken", name);
+                foreach (int userId in userIdList)
+                {
+                    if (user.UserId == userId)
+                    {
+                        newChat.Users.Add(user);
+                        userCounter++;
+                    }
+                }
+            }
+            if (userCounter == userIdList.Count)
+            {
+                if (userIdList.Count > 2)
+                {
+                    newChat.Title = title;   
+                }
+                return new CreateNewChatResponse("Success");
+            }
+            else
+            {
+                return new CreateNewChatResponse("Failure");
+            } 
+        }
+
+        public Chat StartPrivateChat(int senderId, int receiverId, Message message)
+        {
+            Chat targetChat = Chats.Find(chat => chat.Users.Count == 2 &&
+                                                 chat.Users.Exists(user => user.UserId == senderId) &&
+                                                 chat.Users.Exists(user => user.UserId == receiverId));
+
+            if (targetChat == null)
+            {
+                targetChat = new Chat(Users.Find(user => user.UserId == senderId), Users.Find(user => user.UserId == receiverId));
+                Chats.Add(targetChat);
             }
 
+            targetChat.Messages.Add(message);
+
+            return targetChat;
+        }
+
+
+        public AuthorizationResponse AuthorizeUser(string name)
+        {
             bool isUserAlreadyExists = false;
             bool isNameTaken = false;
+            int? userId = null;
 
-            foreach (Contact contact in Contacts)
+            foreach (User user in Users)
             {
-                if (contact.Title == name)
+                if (user.Name == name)
                 {
                     isUserAlreadyExists = true;
 
-                    if (contact.IsOnline == OnlineStatus.Offline)
+                    if (user.IsOnline == OnlineStatus.Offline)
                     {
-                        contact.IsOnline = OnlineStatus.Online;
+                        user.IsOnline = OnlineStatus.Online;
+                        userId = user.UserId;
                     }
                     else
                     {
@@ -153,111 +208,117 @@ namespace MessengerServer
             {
                 if (isNameTaken)
                 {
-                    return new AuthorizationResponse("NameIsTaken", name);
+                    return new AuthorizationResponse("NameIsTaken");
                 }
                 else
                 {
-                    return new AuthorizationResponse("AlreadyExists", name);
+                    //UserListChanged?.Invoke();
+                    return new AuthorizationResponse("AlreadyExists", name, userId);
                 }
             }
             else
             {
-                Contacts.Add(new Contact(name, OnlineStatus.Online));
-                return new AuthorizationResponse("NewUserAdded", name);
+                User newUser = new User(name, OnlineStatus.Online);
+                Users.Add(newUser);
+                Chats[0].Users.Add(newUser);
+                //UserListChanged?.Invoke();
+                return new AuthorizationResponse("NewUserAdded", name, newUser.UserId);
             }
         }
-
 
         public void SetUserOffline(string name)
         {
-            foreach (Contact contact in Contacts)
+            foreach (User user in Users)
             {
-                if (contact.Title == name)
+                if (user.Name == name)
                 {
-                    contact.IsOnline = OnlineStatus.Offline;
+                    user.IsOnline = OnlineStatus.Offline;
                 }
             }
         }
+
         public GetContactsResponse GetContacts(string name)
         {
-            List<Contact> contactList = new List<Contact>();
-            contactList = Contacts.FindAll(contact => contact.Title != name);
+            List<User> contactList = Users.FindAll(user => user.Name != name);
 
-            if (contactList.Count != 0)
-            {
-                return new GetContactsResponse("Success", contactList);
-            }
-            else
-            {
-                return new GetContactsResponse("Empty", new List<Contact>());
-            }
+            return new GetContactsResponse("Success", contactList);
         }
-
-        public void AddPrivateMessage(string sender, string receiver, string text, DateTime sendTime)
+        public GetChatListResponse GetChatList(string name)
         {
-            if (Contacts.Exists(contact => contact.Title == sender && !contact.IsGroop()))
-            {
-                if (Contacts.Exists(contact => contact.Title == receiver && !contact.IsGroop()))
-                {
-                    Message message = new Message(sender, receiver, text, sendTime);
-                    Messages.Add(message);
-                    PrivateMessageReceived?.Invoke(this, message);
-                }
-                else
-                {
-                    throw new Exception("AddPrivateMessage: Sender '" + receiver + "' does not exist");
-                }
-            }
-            else
-            {
-                throw new Exception("AddPrivateMessage: Sender '" + sender + "' does not exist");
-            }
-        }
-        public void AddPublicMessage(string sender, string text, DateTime sendTime)
-        {
-            if (Contacts.Exists(contact => contact.Title == sender && !contact.IsGroop()))
-            {
-                Message message = new Message(sender, PublicChat.Title, text, sendTime);
-                Messages.Add(message);
-                PublicMessageReceived?.Invoke(this, message);
-            }
-            else
-            {
-                throw new Exception("AddPublicMessage: Sender '" + sender + "' does not exist");
-            }
-        }
+            List<Chat> chatList = Chats.FindAll(chat => chat.Users.Exists(user => user.Name == name));
 
-        public GetPrivateMessageListResponse GetPrivateMessageList(string name)
-        {
-            List<Message> messages = new List<Message>();
-
-            if (Contacts.Exists(contact => contact.Title == name && !contact.IsGroop()))
-            {
-                messages = Messages.FindAll(message => message.Sender == name || message.Receiver == name);
-            }
-
-            if (messages.Count != 0)
-            {
-                return new GetPrivateMessageListResponse("Success", messages);
-            }
-            else
-            {
-                return new GetPrivateMessageListResponse("Empty", messages);
-            }
+            return new GetChatListResponse("Success", chatList);
         }
-        public GetPublicMessageListResponse GetPublicMessageList()
-        {
-            List<Message> messages = Messages.FindAll(message => message.Receiver == "Public chat");
+        //public void AddPrivateMessage(string sender, string receiver, string text, DateTime sendTime)
+        //{
+        //    if (Users.Exists(user => user.Name == sender))
+        //    {
+        //        if (Users.Exists(user => user.Name == receiver))
+        //        {
+        //            Message message = new Message(sender, receiver, text, sendTime);
+        //            Messages.Add(message);
+        //            PrivateMessageReceived?.Invoke(message);
+        //        }
+        //        else
+        //        {
+        //            throw new Exception("AddPrivateMessage: Sender '" + receiver + "' does not exist");
+        //        }
+        //    }
+        //    else
+        //    {
+        //        throw new Exception("AddPrivateMessage: Sender '" + sender + "' does not exist");
+        //    }
+        //}
 
-            if (messages.Count != 0)
-            {
-                return new GetPublicMessageListResponse("Success", messages);
-            }
-            else
-            {
-                return new GetPublicMessageListResponse("Empty", messages);
-            }
-        }
+        //public void AddGroupMessage(string sender, string chatName, string text, DateTime sendTime)
+        //{
+        //    if (Users.Exists(user => user.Name == sender))
+        //    {
+        //        Chat groupChat = Chats.Find(chat => chat.Title == chatName);
+        //        if (groupChat != null)
+        //        {
+        //            GroupMessage message = new GroupMessage(sender, chatName, text, sendTime);
+        //            GroupMessages.Add(message);
+        //            GroupMessageReceived?.Invoke(message, groupChat);
+        //        }
+        //        else
+        //        {
+        //            throw new Exception("AddGroupMessage: GropChat '" + chatName + "' does not exist");
+        //        }
+        //    }
+        //    else
+        //    {
+        //        throw new Exception("AddGroupMessage: Sender '" + sender + "' does not exist");
+        //    }
+        //}
+
+        //public GetPrivateMessageListResponse GetPrivateMessageList(string name)
+        //{
+        //    List<Message> messages = new List<Message>();
+
+        //    if (Users.Exists(user => user.Name == name))
+        //    {
+        //        messages = Messages.FindAll(message => message.Sender == name || message.Receiver == name);
+        //    }
+
+        //    return new GetPrivateMessageListResponse("Success", messages);
+        //}
+
+        //public GetGroupMessageListResponse GetGroupMessageList(string name)
+        //{
+        //    List<GroupMessage> messages = new List<GroupMessage>();
+
+        //    foreach (Chat chat in Chats)
+        //    {
+        //        if (chat.Users.Exists(user => user.Name == name))
+        //        {
+        //            messages.AddRange(GroupMessages.FindAll(message => message.ChatName == chat.Title));
+        //        }
+        //    }
+
+        //    return new GetGroupMessageListResponse("Success", messages);
+        //}
+
         public GetEventListResponse GetEventLog(DateTime from, DateTime to)
         {
             List<LogEntry> logResponseList = EventList.FindAll(entry => entry.DateTime >= from && entry.DateTime <= to.AddDays(1));

@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace MessengerServer.Common
+﻿namespace MessengerServer.Common
 {
+    using System;
     public class LogEntry
     {
         private static int _idCounter;
@@ -14,12 +9,15 @@ namespace MessengerServer.Common
         public string Message { get; set; }
         public DateTime DateTime { get; set; }
 
-        public LogEntry(EventType type, string message, DateTime dateTime)
+        public LogEntry(EventType type, string message, DateTime dateTime) : this()
         {
-            LogEntryId = _idCounter++;
             Type = type;
             Message = message;
             DateTime = dateTime;
+        }
+        public LogEntry()
+        {
+            LogEntryId = ++_idCounter;
         }
     }
 }

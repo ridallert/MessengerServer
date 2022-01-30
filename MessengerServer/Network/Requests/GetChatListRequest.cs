@@ -6,20 +6,19 @@ using System.Threading.Tasks;
 
 namespace MessengerServer.Network.Requests
 {
-    public class GetMessageListRequest
+    public class GetChatListRequest
     {
         public string Name { get; set; }
 
-        public GetMessageListRequest(string name)
+        public GetChatListRequest(string name)
         {
             Name = name;
         }
-
         public MessageContainer GetContainer()
         {
             MessageContainer container = new MessageContainer
             {
-                Identifier = nameof(GetMessageListRequest),
+                Identifier = nameof(GetChatListRequest),
                 Payload = this
             };
 

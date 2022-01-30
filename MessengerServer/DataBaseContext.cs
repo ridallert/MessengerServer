@@ -8,11 +8,12 @@ using MessengerServer.Common;
 
 namespace MessengerServer
 {
-    public class ServerStateContext: DbContext
+    public class DataBaseContext: DbContext
     {
+        public DbSet<User> Users { get; set; }
+        public DbSet<Chat> Chats { get; set; }
         public DbSet<Message> Messages { get; set; }
-        public DbSet<Contact> Contacts { get; set; }
         public DbSet<LogEntry> EventList { get; set; }
-        public ServerStateContext(string connectionString) : base(connectionString) { }
+        public DataBaseContext(string connectionString) : base(connectionString) { }
     }
 }

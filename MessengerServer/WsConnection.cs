@@ -91,7 +91,7 @@ namespace MessengerServer
 
             if (!_sendQueue.TryDequeue(out var message) && Interlocked.CompareExchange(ref _sending, 0, 1) == 1)
                 return;
-
+            
             var settings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
             string serializedMessage = JsonConvert.SerializeObject(message, settings);
             SendAsync(serializedMessage, SendCompleted);

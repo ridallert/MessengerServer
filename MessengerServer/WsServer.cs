@@ -25,7 +25,7 @@ namespace MessengerServer
         private WebSocketServer _server;
 
         public event Action<UserStatusChangedBroadcast> UserStatusChanged;
-        public event EventHandler<MessageReceivedEventArgs> MessageReceived;
+        ////public event EventHandler<MessageReceivedEventArgs> MessageReceived;
 
         public WsServer(ServerStateManager serverState, IPEndPoint listenAddress)
         {
@@ -39,10 +39,10 @@ namespace MessengerServer
         {
             _server = new WebSocketServer(_listenAddress.Address, _listenAddress.Port, false);
             _server.AddWebSocketService("/", () => new WsConnection(this));
-            //_server.AddWebSocketService<WsConnection>("/", AddService);
             _server.Start();
-            _serverState.PrivateMessageReceived += SendPrivateMessage;
-            _serverState.PublicMessageReceived += SendPublicMessage;
+
+            //_serverState.PrivateMessageReceived += SendPrivateMessage;
+            //_serverState.GroupMessageReceived += SendGroupMessage;
         }
 
         //WsConnection AddService()
@@ -105,31 +105,49 @@ namespace MessengerServer
                     connection.Send(getContactsResponse.GetContainer());
                     break;
 
-                case nameof(SendPrivateMessageRequest):
+                case nameof(GetChatListRequest):
 
-                    var privateMessageRequest = JsonConvert.DeserializeObject<SendPrivateMessageRequest>(container.Payload.ToString());
-                    _serverState.AddPrivateMessage(privateMessageRequest.Sender, privateMessageRequest.Receiver, privateMessageRequest.Text, privateMessageRequest.SendTime);
-                    var privateMessageResponse = new SendMessageResponse("Success");
-                    break;
-                case nameof(SendPublicMessageRequest):
-
-                    var publicMessageRequest = JsonConvert.DeserializeObject<SendPublicMessageRequest>(container.Payload.ToString());
-                    _serverState.AddPublicMessage(publicMessageRequest.Sender, publicMessageRequest.Text, publicMessageRequest.SendTime);
-                    var publicMessageResponse = new SendMessageResponse("Success");
-                    break;
-                case nameof(GetPrivateMessageListRequest):
-
-                    GetPrivateMessageListRequest getPrivateMessageListRequest = JsonConvert.DeserializeObject<GetPrivateMessageListRequest>(container.Payload.ToString());
-                    GetPrivateMessageListResponse getPrivateMessageListResponse = _serverState.GetPrivateMessageList(getPrivateMessageListRequest.Name);
-                    connection.Send(getPrivateMessageListResponse.GetContainer());
+                    GetChatListRequest getChatListRequest = JsonConvert.DeserializeObject<GetChatListRequest>(container.Payload.ToString());
+                    GetChatListResponse getChatListResponse = _serverState.GetChatList(getChatListRequest.Name);
+                    connection.Send(getChatListResponse.GetContainer());
                     break;
 
-                case nameof(GetPublicMessageListRequest):
+                case nameof(CreateNewChatRequest):
 
-                    GetPublicMessageListRequest getPublicMessageListRequest = JsonConvert.DeserializeObject<GetPublicMessageListRequest>(container.Payload.ToString());
-                    GetPublicMessageListResponse getPublicMessageListResponse = _serverState.GetPublicMessageList();
-                    connection.Send(getPublicMessageListResponse.GetContainer());
+                    CreateNewChatRequest createNewChatRequest = JsonConvert.DeserializeObject<CreateNewChatRequest>(container.Payload.ToString());
+                    CreateNewChatResponse createNewChatResponse = _serverState.CreateNewChat(createNewChatRequest.Title, createNewChatRequest.UserIdList);
+                    connection.Send(createNewChatResponse.GetContainer());
                     break;
+
+                //case nameof(SendPrivateMessageRequest):
+
+                //    var privateMessageRequest = JsonConvert.DeserializeObject<SendPrivateMessageRequest>(container.Payload.ToString());
+                //    _serverState.AddPrivateMessage(privateMessageRequest.Sender, privateMessageRequest.Receiver, privateMessageRequest.Text, privateMessageRequest.SendTime);
+                //    var privateMessageResponse = new SendMessageResponse("Success");
+                //    connection.Send(privateMessageResponse.GetContainer());
+                //    break;
+
+                //case nameof(SendGroupMessageRequest):
+
+                //    var groupMessageRequest = JsonConvert.DeserializeObject<SendGroupMessageRequest>(container.Payload.ToString());
+                //    _serverState.AddGroupMessage(groupMessageRequest.Sender, groupMessageRequest.ChatName, groupMessageRequest.Text, groupMessageRequest.SendTime);
+                //    var groupMessageResponse = new SendMessageResponse("Success");
+                //    connection.Send(groupMessageResponse.GetContainer());
+                //    break;
+
+                //case nameof(GetPrivateMessageListRequest):
+
+                //    GetPrivateMessageListRequest getPrivateMessageListRequest = JsonConvert.DeserializeObject<GetPrivateMessageListRequest>(container.Payload.ToString());
+                //    GetPrivateMessageListResponse getPrivateMessageListResponse = _serverState.GetPrivateMessageList(getPrivateMessageListRequest.Name);
+                //    connection.Send(getPrivateMessageListResponse.GetContainer());
+                //    break;
+
+                //case nameof(GetGroupMessageListRequest):
+
+                //    GetGroupMessageListRequest getGroupMessageListRequest = JsonConvert.DeserializeObject<GetGroupMessageListRequest>(container.Payload.ToString());
+                //    GetGroupMessageListResponse getGroupMessageListResponse = _serverState.GetGroupMessageList(getGroupMessageListRequest.Name);
+                //    connection.Send(getGroupMessageListResponse.GetContainer());
+                //    break;
 
                 case nameof(GetEventListRequest):
 
@@ -149,25 +167,28 @@ namespace MessengerServer
                 }
             }
         }
-        internal void SendPrivateMessage(object sender, Message message)
-        {
-            foreach (var connection in _connections)
-            {
-                if (connection.Value.Login == message.Sender || connection.Value.Login == message.Receiver)
-                {
-                    var privateMessageResponse = new PrivateMessageReceivedResponse(message.Sender, message.Receiver, message.Text, message.SendTime);
-                    connection.Value.Send(privateMessageResponse.GetContainer());
-                }
-            }
-        }
-        internal void SendPublicMessage(object sender, Message message)
-        {
-            foreach (var connection in _connections)
-            {
-                var publicMessageResponse = new PublicMessageReceivedResponse(message.Sender, message.Text, message.SendTime);
-                connection.Value.Send(publicMessageResponse.GetContainer());
-            }
-        }
+        //internal void SendPrivateMessage(Message message)
+        //{
+        //    foreach (var connection in _connections)
+        //    {
+        //        if (connection.Value.Login == message.Sender || connection.Value.Login == message.Receiver)
+        //        {
+        //            var privateMessageResponse = new PrivateMessageReceivedResponse(message.Sender, message.Receiver, message.Text, message.SendTime);
+        //            connection.Value.Send(privateMessageResponse.GetContainer());
+        //        }
+        //    }
+        //}
+        //internal void SendGroupMessage(GroupMessage message, Chat chat)
+        //{
+        //    foreach (var connection in _connections)
+        //    {
+        //        if (chat.Users.Exists(user => user.Name == connection.Value.Login))
+        //        {
+        //            var groupMessageResponse = new PublicMessageReceivedResponse(message.Sender, message.Text, message.SendTime);
+        //            connection.Value.Send(groupMessageResponse.GetContainer());
+        //        }
+        //    }
+        //}
 
         internal void AddConnection(WsConnection connection)
         {
@@ -182,6 +203,5 @@ namespace MessengerServer
                 UserStatusChanged?.Invoke(new UserStatusChangedBroadcast(connection.Login, OnlineStatus.Offline));
             }
         }
-
     }
 }

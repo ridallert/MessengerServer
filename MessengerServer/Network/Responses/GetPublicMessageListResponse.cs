@@ -3,12 +3,12 @@ using System.Collections.Generic;
 
 namespace MessengerServer.Network.Responses
 {
-    public class GetPublicMessageListResponse
+    public class GetGroupMessageListResponse
     {
         public string Result { get; set; }
         public List<Message> MessageList { get; set; }
 
-        public GetPublicMessageListResponse(string result, List<Message> messageList)
+        public GetGroupMessageListResponse(string result, List<Message> messageList)
         {
             Result = result;
             MessageList = messageList;
@@ -24,7 +24,7 @@ namespace MessengerServer.Network.Responses
         {
             MessageContainer container = new MessageContainer
             {
-                Identifier = nameof(GetPublicMessageListResponse),
+                Identifier = nameof(GetGroupMessageListResponse),
                 Payload = this
             };
 

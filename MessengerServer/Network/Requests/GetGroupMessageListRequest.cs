@@ -1,29 +1,24 @@
-﻿
-using MessengerServer.Common;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MessengerServer.Network.Broadcasts
+namespace MessengerServer.Network.Requests
 {
-    public class UserStatusChangedBroadcast
+    public class GetGroupMessageListRequest
     {
         public string Name { get; set; }
-        public OnlineStatus Status { get; set; }
 
-        public UserStatusChangedBroadcast(string name, OnlineStatus status)
+        public GetGroupMessageListRequest(string name)
         {
             Name = name;
-            Status = status;
         }
-
         public MessageContainer GetContainer()
         {
             MessageContainer container = new MessageContainer
             {
-                Identifier = nameof(UserStatusChangedBroadcast),
+                Identifier = nameof(GetGroupMessageListRequest),
                 Payload = this
             };
 

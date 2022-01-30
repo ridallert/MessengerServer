@@ -25,7 +25,7 @@ namespace MessengerServer
             _serverState = new ServerStateManager();
             _wsServer = new WsServer(_serverState, new IPEndPoint(_ipAddress, WS_PORT));
             _wsServer.UserStatusChanged += HandleUserStatusChanged;
-            _wsServer.MessageReceived += HandleMessageReceived;
+            //_serverState.PrivateMessageReceived += OnPrivateMessageReceived;
         }
 
         public void Start()
@@ -39,14 +39,10 @@ namespace MessengerServer
             _wsServer.Stop();
         }
 
-        private void HandleMessageReceived(object sender, MessageReceivedEventArgs e)
+        private void OnPrivateMessageReceived(Message message)
         {
-            string message = $"Клиент '{e.ClientName}' отправил сообщение '{e.Message}'.";
-
-            Console.WriteLine(message);
-
+            Console.WriteLine($"Клиент '{message.Sender.Name}' отправил сообщение '{message.Text}'.");
             //_wsServer.Send(message);
-
         }
 
         private void HandleUserStatusChanged(UserStatusChangedBroadcast broadcast)
