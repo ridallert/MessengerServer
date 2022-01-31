@@ -22,6 +22,7 @@ namespace MessengerServer
         public List<Message> Messages { get; set; }
         private List<LogEntry> EventList { get; set; }
 
+        public event Action<Chat> NewChatCreated;
         //public event Action UserListChanged;
         //public event Action<Message> MessageReceived;
 
@@ -152,8 +153,10 @@ namespace MessengerServer
             {
                 if (userIdList.Count > 2)
                 {
-                    newChat.Title = title;   
+                    newChat.Title = title;
                 }
+                Chats.Add(newChat);
+                NewChatCreated?.Invoke(newChat);
                 return new CreateNewChatResponse("Success");
             }
             else
@@ -162,22 +165,22 @@ namespace MessengerServer
             } 
         }
 
-        public Chat StartPrivateChat(int senderId, int receiverId, Message message)
-        {
-            Chat targetChat = Chats.Find(chat => chat.Users.Count == 2 &&
-                                                 chat.Users.Exists(user => user.UserId == senderId) &&
-                                                 chat.Users.Exists(user => user.UserId == receiverId));
+        //public Chat StartPrivateChat(int senderId, int receiverId, Message message)
+        //{
+        //    Chat targetChat = Chats.Find(chat => chat.Users.Count == 2 &&
+        //                                         chat.Users.Exists(user => user.UserId == senderId) &&
+        //                                         chat.Users.Exists(user => user.UserId == receiverId));
 
-            if (targetChat == null)
-            {
-                targetChat = new Chat(Users.Find(user => user.UserId == senderId), Users.Find(user => user.UserId == receiverId));
-                Chats.Add(targetChat);
-            }
+        //    if (targetChat == null)
+        //    {
+        //        targetChat = new Chat(Users.Find(user => user.UserId == senderId), Users.Find(user => user.UserId == receiverId));
+        //        Chats.Add(targetChat);
+        //    }
 
-            targetChat.Messages.Add(message);
+        //    targetChat.Messages.Add(message);
 
-            return targetChat;
-        }
+        //    return targetChat;
+        //}
 
 
         public AuthorizationResponse AuthorizeUser(string name)

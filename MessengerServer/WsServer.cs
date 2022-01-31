@@ -41,6 +41,8 @@ namespace MessengerServer
             _server.AddWebSocketService("/", () => new WsConnection(this));
             _server.Start();
 
+            _serverState.NewChatCreated += SendNewChatCreatedReponse;
+
             //_serverState.PrivateMessageReceived += SendPrivateMessage;
             //_serverState.GroupMessageReceived += SendGroupMessage;
         }
@@ -167,6 +169,21 @@ namespace MessengerServer
                 }
             }
         }
+        internal void SendNewChatCreatedReponse(Chat chat)
+        {
+            foreach (var connection in _connections)
+            {
+                foreach (User user in chat.Users)
+                {
+                    if (connection.Value.Login == user.Name)
+                    {
+                        NewChatCreatedResponse newChatCreatedResponse = new NewChatCreatedResponse(chat);
+                        connection.Value.Send(newChatCreatedResponse.GetContainer());
+                    }
+                }
+            }
+        }
+
         //internal void SendPrivateMessage(Message message)
         //{
         //    foreach (var connection in _connections)
