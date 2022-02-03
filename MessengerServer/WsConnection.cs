@@ -20,6 +20,7 @@ namespace MessengerServer
 
         public Guid Id { get; }
         public string Login { get; set; }
+        public int? UserId { get; set; }
 
         public bool IsConnected => Context.WebSocket?.ReadyState == WebSocketState.Open;
 

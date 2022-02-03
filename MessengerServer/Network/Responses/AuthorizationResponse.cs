@@ -10,9 +10,9 @@ namespace MessengerServer.Network.Responses
     {
         public string Result { get; set; }
         public string Name { get; set; }
-        public int? UserId { get; set; }
+        public int UserId { get; set; }
 
-        public AuthorizationResponse(string result, string name, int? userId) : this(result)
+        public AuthorizationResponse(string result, string name, int userId) : this(result)
         {
             Name = name;
             UserId = userId;

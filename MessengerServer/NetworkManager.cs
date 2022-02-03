@@ -15,7 +15,7 @@ namespace MessengerServer
 {
     class NetworkManager
     {
-        private const int WS_PORT = 7890;
+        private const int _port = 7890;
         private readonly IPAddress _ipAddress = IPAddress.Any;
         private readonly WsServer _wsServer;
         private ServerStateManager _serverState;
@@ -23,14 +23,14 @@ namespace MessengerServer
         public NetworkManager()
         {
             _serverState = new ServerStateManager();
-            _wsServer = new WsServer(_serverState, new IPEndPoint(_ipAddress, WS_PORT));
+            _wsServer = new WsServer(_serverState, new IPEndPoint(_ipAddress, _port));
             _wsServer.UserStatusChanged += HandleUserStatusChanged;
-            //_serverState.PrivateMessageReceived += OnPrivateMessageReceived;
+            _serverState.MessageReceived += OnMessageReceived;
         }
 
         public void Start()
         {
-            Console.WriteLine($"WebSocketServer: {_ipAddress}:{WS_PORT}");
+            Console.WriteLine($"WebSocketServer: {_ipAddress}:{_port}");
             _wsServer.Start();
         }
 
@@ -39,16 +39,24 @@ namespace MessengerServer
             _wsServer.Stop();
         }
 
-        private void OnPrivateMessageReceived(Message message)
+        private void OnMessageReceived(Message message)
         {
-            Console.WriteLine($"Клиент '{message.Sender.Name}' отправил сообщение '{message.Text}'.");
-            //_wsServer.Send(message);
+            string receiver;
+            if (message.Chat.Users.Count == 2)
+            {
+                receiver = message.Chat.Users.Find(user => user.Name != message.Sender.Name).Name;
+            }
+            else
+            {
+                receiver = message.Chat.Title;
+            }
+            Console.WriteLine($"Клиент '{message.Sender.Name}' отправил сообщение '{message.Text}' для '{receiver}'");
         }
 
         private void HandleUserStatusChanged(UserStatusChangedBroadcast broadcast)
         {
             string state = broadcast.Status == OnlineStatus.Online ? "подключен" : "отключен";
-            Console.WriteLine($"Клиент '{broadcast.Name}' {state}.");
+            Console.WriteLine($"Клиент '{broadcast.Name}' {state}");
         }
     }
 }

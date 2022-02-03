@@ -4,17 +4,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MessengerServer.Network.Responses
+namespace MessengerServer.Network.Requests
 {
-    public class PublicMessageReceivedResponse
+    class SendMessageRequest
     {
-        public string Sender { get; set; }
+        public int SenderId { get; set; }
+        public int ChatId { get; set; }
         public string Text { get; set; }
         public DateTime SendTime { get; set; }
 
-        public PublicMessageReceivedResponse(string sender, string text, DateTime sendTime)
+        public SendMessageRequest(int senderId, int chatId, string text, DateTime sendTime)
         {
-            Sender = sender;
+            SenderId = senderId;
+            ChatId = chatId;
             Text = text;
             SendTime = sendTime;
         }
@@ -23,7 +25,7 @@ namespace MessengerServer.Network.Responses
         {
             MessageContainer container = new MessageContainer
             {
-                Identifier = nameof(PublicMessageReceivedResponse),
+                Identifier = nameof(SendMessageRequest),
                 Payload = this
             };
 
