@@ -2,6 +2,7 @@
 using MessengerServer.Network;
 using MessengerServer.Network.Broadcasts;
 using MessengerServer.Network.EventArgs;
+using MessengerServer.Configurations;
 using MessengerServer.Network.Responses;
 using System;
 using System.Collections.Generic;
@@ -16,6 +17,8 @@ namespace MessengerServer
 {
     public class ServerStateManager
     {
+
+
         private DataBaseManager _dataBaseManager;
 
         public List<User> Users { get; set; }
@@ -29,8 +32,8 @@ namespace MessengerServer
 
         public ServerStateManager()
         {
-            _dataBaseManager = new DataBaseManager();
-            _dataBaseManager.SetConnectionString("Data Source=(localdb)\\MSSQLLocalDB; Initial Catalog=ServerState; Integrated Security=True;");
+            ConfigManager configManager = new ConfigManager();
+            _dataBaseManager = new DataBaseManager(configManager.GetDefaultConnectionString());
             //_dataBaseManager.InitializeDataBase();
 
             Users = _dataBaseManager.GetUsers();

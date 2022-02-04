@@ -1,31 +1,35 @@
 ﻿namespace MessengerServer
 {
     using MessengerServer.Common;
-    using MessengerServer.Network.Responses;
     using System;
+    using System.Configuration;
     using System.Collections.Generic;
     using System.Data.Entity;
     using System.Linq;
 
     public class DataBaseManager
     {
-        //private DataBaseContext _dataBase;
         private string _connectionString;
-        //public void Connect(string connectionString)
-        //{
-        //    try
-        //    {
-        //        _dataBase = new DataBaseContext(connectionString);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Console.WriteLine(ex);
-        //        Console.ReadLine();
-        //    }
-        //}
-        public void SetConnectionString(string connString)
+
+        private DataBaseContext _dataBase;
+
+        public DataBaseManager(ConnectionStringSettings connectionString)
         {
-            _connectionString = connString;
+            _connectionString = connectionString.ToString();
+            _dataBase = new DataBaseContext(_connectionString);
+        }
+
+        public void Connect(string connectionString)
+        {
+            try
+            {
+                _dataBase = new DataBaseContext(connectionString);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                Console.ReadLine();
+            }
         }
         public bool IsDataBaseExists()
         {
@@ -107,58 +111,6 @@
             AddLogEntries(EventList);
         }
 
-        public AuthorizationResponse AuthorizeUser(string name)
-        {
-            using (DataBaseContext dataBase = new DataBaseContext())
-            {
-                // получаем первый объект
-                Phone p1 = db.Phones.FirstOrDefault();
-
-                p1.Price = 30000;
-                db.SaveChanges();   // сохраняем изменения
-            }
-
-            bool isUserAlreadyExists = false;
-            bool isNameTaken = false;
-            int? userId = null;
-
-            foreach (User user in Users)
-            {
-                if (user.Name == name)
-                {
-                    isUserAlreadyExists = true;
-
-                    if (user.IsOnline == OnlineStatus.Offline)
-                    {
-                        user.IsOnline = OnlineStatus.Online;
-                        userId = user.UserId;
-                    }
-                    else
-                    {
-                        isNameTaken = true;
-                    }
-                }
-            }
-
-            if (isUserAlreadyExists)
-            {
-                if (isNameTaken)
-                {
-                    return new AuthorizationResponse("NameIsTaken");
-                }
-                else
-                {
-                    return new AuthorizationResponse("AlreadyExists", name, userId.Value);
-                }
-            }
-            else
-            {
-                User newUser = new User(name, OnlineStatus.Online);
-                //Users.Add(newUser);
-                //Chats[0].Users.Add(newUser);
-                return new AuthorizationResponse("NewUserAdded", name, newUser.UserId);
-            }
-        }
         public List<User> GetUsers()
         {
             List<User> userList = new List<User>();

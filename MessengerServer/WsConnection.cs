@@ -9,6 +9,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using WebSocketSharp;
 using WebSocketSharp.Server;
+using System.ComponentModel;
+using System.Timers;
 
 namespace MessengerServer
 {
@@ -17,7 +19,7 @@ namespace MessengerServer
         private readonly ConcurrentQueue<MessageContainer> _sendQueue;
         private WsServer _server;
         private int _sending;
-
+        private System.Timers.Timer _timer;
         public Guid Id { get; }
         public string Login { get; set; }
         public int? UserId { get; set; }
@@ -26,11 +28,20 @@ namespace MessengerServer
 
         public WsConnection(WsServer server)
         {
+            _timer = new System.Timers.Timer { AutoReset = false, Interval = 60*1000 };
+            _timer.Elapsed += OnTimerElapsed;
             _server = server;
             _sendQueue = new ConcurrentQueue<MessageContainer>();
             _sending = 0;
-
+            
             Id = Guid.NewGuid();
+            _timer.Start();
+        }
+
+        private void OnTimerElapsed(object sender, ElapsedEventArgs e)
+        {
+            Close();
+            Console.WriteLine($"Client '{Login}' is disabled due to inactivity");
         }
 
         //public void AddServer(WsServer server)

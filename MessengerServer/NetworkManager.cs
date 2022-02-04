@@ -1,9 +1,11 @@
 ﻿using MessengerServer.Common;
+using MessengerServer.Configurations;
 using MessengerServer.Network;
 using MessengerServer.Network.Broadcasts;
 using MessengerServer.Network.EventArgs;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -15,13 +17,35 @@ namespace MessengerServer
 {
     class NetworkManager
     {
-        private const int _port = 7890;
-        private readonly IPAddress _ipAddress = IPAddress.Any;
+        private readonly int _timeout;
+        private readonly int _port;
+        private readonly IPAddress _ipAddress;
+
         private readonly WsServer _wsServer;
-        private ServerStateManager _serverState;
+        private readonly ServerStateManager _serverState;
 
         public NetworkManager()
         {
+            var configManager = new ConfigManager();
+
+            _ipAddress = configManager.IpAddress;
+            _port = configManager.Port;
+            _timeout = configManager.Timeout;
+
+            ConnectionStringSettings connectionSettings = configManager.ConnectionSettings;
+            DataBaseManager dataBaseManager;
+
+            try
+            {
+                dataBaseManager = new DataBaseManager(connectionSettings);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Data Base Connection Error:\n" + e.Message);
+                dataBaseManager = new DataBaseManager(configManager.GetDefaultConnectionString());
+            }
+
+
             _serverState = new ServerStateManager();
             _wsServer = new WsServer(_serverState, new IPEndPoint(_ipAddress, _port));
             _wsServer.UserStatusChanged += HandleUserStatusChanged;
@@ -50,13 +74,13 @@ namespace MessengerServer
             {
                 receiver = message.Chat.Title;
             }
-            Console.WriteLine($"Клиент '{message.Sender.Name}' отправил сообщение '{message.Text}' для '{receiver}'");
+            Console.WriteLine($"Client '{message.Sender.Name}' sent message '{message.Text}' for '{receiver}'");
         }
 
         private void HandleUserStatusChanged(UserStatusChangedBroadcast broadcast)
         {
-            string state = broadcast.Status == OnlineStatus.Online ? "подключен" : "отключен";
-            Console.WriteLine($"Клиент '{broadcast.Name}' {state}");
+            string state = broadcast.Status == OnlineStatus.Online ? "connected" : "disconnected";
+            Console.WriteLine($"Client '{broadcast.Name}' is {state}");
         }
     }
 }
