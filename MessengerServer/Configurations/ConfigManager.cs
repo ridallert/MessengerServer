@@ -23,7 +23,7 @@
                 ConnectionString = "Data Source=(localdb)\\MSSQLLocalDB; Initial Catalog=ServerState; Integrated Security=True;",
                 Provider = "System.Data.SqlClient",
                 DataBaseName = "ServerDataBase",
-                Timeout = 600000000,
+                Timeout = 10,
             };
 
             _defaultPath = Environment.CurrentDirectory + "\\Configs.json";

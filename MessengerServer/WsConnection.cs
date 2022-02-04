@@ -17,6 +17,7 @@ namespace MessengerServer
     class WsConnection : WebSocketBehavior
     {
         private readonly ConcurrentQueue<MessageContainer> _sendQueue;
+        private readonly int _timeout;
         private WsServer _server;
         private int _sending;
         private System.Timers.Timer _timer;
@@ -26,18 +27,25 @@ namespace MessengerServer
 
         public bool IsConnected => Context.WebSocket?.ReadyState == WebSocketState.Open;
 
-        public WsConnection(WsServer server)
+        public WsConnection(WsServer server, int timeout)
         {
-            _timer = new System.Timers.Timer { AutoReset = false, Interval = 60*1000 };
+            _timeout = timeout;
+            _timer = new System.Timers.Timer { AutoReset = false, Interval = _timeout * 1000 };
             _timer.Elapsed += OnTimerElapsed;
+            
+            
             _server = server;
             _sendQueue = new ConcurrentQueue<MessageContainer>();
             _sending = 0;
-            
+
             Id = Guid.NewGuid();
             _timer.Start();
         }
-
+        private void ResetTimer()
+        {
+            _timer.Stop();
+            _timer.Start();
+        }
         private void OnTimerElapsed(object sender, ElapsedEventArgs e)
         {
             Close();
@@ -76,6 +84,8 @@ namespace MessengerServer
 
         protected override void OnMessage(MessageEventArgs e)
         {
+            ResetTimer();
+
             if (e.IsText)
             {
                 var message = JsonConvert.DeserializeObject<MessageContainer>(e.Data);
@@ -84,10 +94,10 @@ namespace MessengerServer
         }
 
         private void SendCompleted(bool completed)
-        {
-            // При отправке произошла ошибка.
+        {            
             if (!completed)
             {
+                Console.WriteLine("An error occurred while sending the response");
                 _server.FreeConnection(Id);
                 Context.WebSocket.CloseAsync();
                 return;
@@ -103,7 +113,7 @@ namespace MessengerServer
 
             if (!_sendQueue.TryDequeue(out var message) && Interlocked.CompareExchange(ref _sending, 0, 1) == 1)
                 return;
-            
+
             var settings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
             string serializedMessage = JsonConvert.SerializeObject(message, settings);
             SendAsync(serializedMessage, SendCompleted);

@@ -33,10 +33,10 @@ namespace MessengerServer
             _connections = new ConcurrentDictionary<Guid, WsConnection>(); 
         }
 
-        public void Start()
+        public void Start(int timeout)
         {
             _server = new WebSocketServer(_listenAddress.Address, _listenAddress.Port, false);
-            _server.AddWebSocketService("/", () => new WsConnection(this));
+            _server.AddWebSocketService("/", () => new WsConnection(this, timeout));
             _server.Start();
 
             UserStatusChanged += SendUserStatusChangedBroadcast;

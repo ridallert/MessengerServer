@@ -55,7 +55,7 @@ namespace MessengerServer
         public void Start()
         {
             Console.WriteLine($"WebSocketServer: {_ipAddress}:{_port}");
-            _wsServer.Start();
+            _wsServer.Start(_timeout);
         }
 
         public void Stop()
