@@ -19,13 +19,15 @@
         private readonly DataBaseManager _dataBaseManager;
         private WebSocketServer _server;
 
-        public event Action<UserStatusChangedBroadcast> UserStatusChanged;
-
         public WsServer()
         {
+            _connections = new ConcurrentDictionary<Guid, WsConnection>();
             _configs = new ConfigManager();
             _dataBaseManager = new DataBaseManager();
-            _connections = new ConcurrentDictionary<Guid, WsConnection>();
+
+            _dataBaseManager.UserStatusChanged += SendUserStatusChangedBroadcast;
+            _dataBaseManager.NewChatCreated += SendNewChatCreatedReponse;
+            _dataBaseManager.MessageReceived += SendMessage;
         }
 
         public void Start()
@@ -35,11 +37,6 @@
             _server.Start();
 
             Console.WriteLine($"WebSocketServer: {_configs.IpAddress}:{_configs.Port}");
-
-            UserStatusChanged += SendUserStatusChangedBroadcast;
-    
-            _dataBaseManager.MessageReceived += SendMessage;
-            _dataBaseManager.NewChatCreated += SendNewChatCreatedReponse;
         }
 
         public void Stop()
@@ -73,7 +70,7 @@
                     {
                         connection.Login = authorizationResponse.Name;
                         connection.UserId = authorizationResponse.UserId;
-                        UserStatusChanged?.Invoke(new UserStatusChangedBroadcast(connection.Login, connection.UserId.Value, OnlineStatus.Online));
+                        _dataBaseManager.SetOnlineStatus(authorizationResponse.UserId);
                     }
                     break;
 
@@ -101,9 +98,8 @@
                 case nameof(SendMessageRequest):
 
                     SendMessageRequest messageRequest = JsonConvert.DeserializeObject<SendMessageRequest>(container.Payload.ToString());
-                    _dataBaseManager.AddMessage(messageRequest.SenderId, messageRequest.ChatId, messageRequest.Text, messageRequest.SendTime);
-                    var privateMessageResponse = new SendMessageResponse("Success");
-                    connection.Send(privateMessageResponse.GetContainer());
+                    SendMessageResponse messageResponse = _dataBaseManager.AddMessage(messageRequest.SenderId, messageRequest.ChatId, messageRequest.Text, messageRequest.SendTime);
+                    connection.Send(messageResponse.GetContainer());
                     break;
 
                 case nameof(GetEventListRequest):
@@ -114,6 +110,7 @@
                     break;
             }
         }
+
         internal void SendUserStatusChangedBroadcast(UserStatusChangedBroadcast broadcast)
         {
             string state = broadcast.Status == OnlineStatus.Online ? "connected" : "disconnected";
@@ -121,7 +118,7 @@
 
             foreach (var connection in _connections)
             {
-                if (connection.Value.Login != broadcast.Name)
+                if (connection.Value.UserId != broadcast.UserId)
                 {
                     connection.Value.Send(broadcast.GetContainer());
                 }
@@ -134,7 +131,7 @@
             {
                 foreach (User user in chat.Users)
                 {
-                    if (connection.Value.Login == user.Name)
+                    if (connection.Value.UserId == user.UserId)
                     {
                         NewChatCreatedResponse newChatCreatedResponse = new NewChatCreatedResponse(chat);
                         connection.Value.Send(newChatCreatedResponse.GetContainer());
@@ -160,8 +157,8 @@
             {
                 if (message.Chat.Users.Exists(user => user.UserId == connection.Value.UserId))
                 {
-                    var messageResponse = new MessageReceivedResponse(message.MessageId, message.Sender.UserId, message.Chat.ChatId,message.Sender.Name, message.Text, message.SendTime);
-                    connection.Value.Send(messageResponse.GetContainer());
+                    var response = new MessageReceivedResponse(message.MessageId, message.Sender.UserId, message.Chat.ChatId,message.Sender.Name, message.Text, message.SendTime);
+                    connection.Value.Send(response.GetContainer());
                 }
             }
         }
@@ -176,7 +173,6 @@
             if (_connections.TryRemove(connectionId, out WsConnection connection) && connection.UserId != null)
             {
                 _dataBaseManager.SetOfflineStatus(connection.UserId.Value);
-                UserStatusChanged?.Invoke(new UserStatusChangedBroadcast(connection.Login, connection.UserId.Value, OnlineStatus.Offline));
             }
         }
     }
