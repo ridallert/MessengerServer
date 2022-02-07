@@ -1,23 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace MessengerServer
+﻿namespace MessengerServer
 {
+    using System;
     class Program
     {
         static void Main()
         {
             try
             {
-                var networkManager = new NetworkManager();
-                networkManager.Start();
+                var wsServer = new WsServer();
+                wsServer.Start();
 
                 Console.ReadLine();
 
-                networkManager.Stop();
+                wsServer.Stop();
             }
             catch (Exception ex)
             {

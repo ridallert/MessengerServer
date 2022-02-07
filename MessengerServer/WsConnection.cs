@@ -1,23 +1,17 @@
-﻿using MessengerServer.Network;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using WebSocketSharp;
-using WebSocketSharp.Server;
-using System.ComponentModel;
-using System.Timers;
-
-namespace MessengerServer
+﻿namespace MessengerServer
 {
+    using MessengerServer.Network;
+    using Newtonsoft.Json;
+    using System;
+    using System.Collections.Concurrent;
+    using System.Threading;
+    using WebSocketSharp;
+    using WebSocketSharp.Server;
+    using System.Timers;
+
     class WsConnection : WebSocketBehavior
     {
         private readonly ConcurrentQueue<MessageContainer> _sendQueue;
-        private readonly int _timeout;
         private WsServer _server;
         private int _sending;
         private System.Timers.Timer _timer;
@@ -28,15 +22,13 @@ namespace MessengerServer
         public bool IsConnected => Context.WebSocket?.ReadyState == WebSocketState.Open;
 
         public WsConnection(WsServer server, int timeout)
-        {
-            _timeout = timeout;
-            _timer = new System.Timers.Timer { AutoReset = false, Interval = _timeout * 1000 };
-            _timer.Elapsed += OnTimerElapsed;
-            
-            
+        {            
             _server = server;
             _sendQueue = new ConcurrentQueue<MessageContainer>();
             _sending = 0;
+
+            _timer = new System.Timers.Timer { AutoReset = false, Interval = timeout * 1000 };
+            _timer.Elapsed += OnTimerElapsed;
 
             Id = Guid.NewGuid();
             _timer.Start();
@@ -51,11 +43,6 @@ namespace MessengerServer
             Close();
             Console.WriteLine($"Client '{Login}' is disabled due to inactivity");
         }
-
-        //public void AddServer(WsServer server)
-        //{
-        //    _server = server;
-        //}
 
         public void Send(MessageContainer container)
         {

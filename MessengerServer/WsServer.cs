@@ -1,47 +1,45 @@
-﻿using MessengerServer.Common;
-using MessengerServer.Network;
-using MessengerServer.Network.Broadcasts;
-using MessengerServer.Network.EventArgs;
-using MessengerServer.Network.Requests;
-using MessengerServer.Network.Responses;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
-using WebSocketSharp.Server;
-
-namespace MessengerServer
+﻿namespace MessengerServer
 {
+    using MessengerServer.Common;
+    using MessengerServer.Configurations;
+    using MessengerServer.Network;
+    using MessengerServer.Network.Broadcasts;
+    using MessengerServer.Network.Requests;
+    using MessengerServer.Network.Responses;
+    using Newtonsoft.Json;
+    using System;
+    using System.Collections.Concurrent;
+    using System.Linq;
+    using WebSocketSharp.Server;
+
     class WsServer
     {
-        private readonly IPEndPoint _listenAddress;
+        private readonly ConfigManager _configs;
         private readonly ConcurrentDictionary<Guid, WsConnection> _connections;
-        private ServerStateManager _serverState;
+        private readonly DataBaseManager _dataBaseManager;
         private WebSocketServer _server;
 
         public event Action<UserStatusChangedBroadcast> UserStatusChanged;
 
-        public WsServer(ServerStateManager serverState, IPEndPoint listenAddress)
+        public WsServer()
         {
-            _serverState = serverState;
-            _listenAddress = listenAddress;
-            _connections = new ConcurrentDictionary<Guid, WsConnection>(); 
+            _configs = new ConfigManager();
+            _dataBaseManager = new DataBaseManager();
+            _connections = new ConcurrentDictionary<Guid, WsConnection>();
         }
 
-        public void Start(int timeout)
+        public void Start()
         {
-            _server = new WebSocketServer(_listenAddress.Address, _listenAddress.Port, false);
-            _server.AddWebSocketService("/", () => new WsConnection(this, timeout));
+            _server = new WebSocketServer(_configs.IpAddress, _configs.Port, false);
+            _server.AddWebSocketService("/", () => new WsConnection(this, _configs.Timeout));
             _server.Start();
 
+            Console.WriteLine($"WebSocketServer: {_configs.IpAddress}:{_configs.Port}");
+
             UserStatusChanged += SendUserStatusChangedBroadcast;
-            _serverState.NewChatCreated += SendNewChatCreatedReponse;
-            _serverState.MessageReceived += SendMessage;
+    
+            _dataBaseManager.MessageReceived += SendMessage;
+            _dataBaseManager.NewChatCreated += SendNewChatCreatedReponse;
         }
 
         public void Stop()
@@ -68,10 +66,10 @@ namespace MessengerServer
                 case nameof(AuthorizationRequest):
 
                     AuthorizationRequest authorizationRequest = JsonConvert.DeserializeObject<AuthorizationRequest>(container.Payload.ToString());
-                    AuthorizationResponse authorizationResponse = _serverState.AuthorizeUser(authorizationRequest.Name);
+                    AuthorizationResponse authorizationResponse = _dataBaseManager.AuthorizeUser(authorizationRequest.Name);
                     connection.Send(authorizationResponse.GetContainer());
 
-                    if (authorizationResponse.Result != "NameIsTaken")
+                    if (authorizationResponse.Result != "Name is taken")
                     {
                         connection.Login = authorizationResponse.Name;
                         connection.UserId = authorizationResponse.UserId;
@@ -81,29 +79,29 @@ namespace MessengerServer
 
                 case nameof(GetUserListRequest):
 
-                    GetUserListRequest getContactsRequest = JsonConvert.DeserializeObject<GetUserListRequest>(container.Payload.ToString());
-                    GetUserListResponse getContactsResponse = _serverState.GetContacts(getContactsRequest.Name);
-                    connection.Send(getContactsResponse.GetContainer());
+                    GetUserListRequest getUserListRequest = JsonConvert.DeserializeObject<GetUserListRequest>(container.Payload.ToString());
+                    GetUserListResponse getUserListResponse = _dataBaseManager.GetUserList(getUserListRequest.UserId);
+                    connection.Send(getUserListResponse.GetContainer());
                     break;
 
                 case nameof(GetChatListRequest):
 
                     GetChatListRequest getChatListRequest = JsonConvert.DeserializeObject<GetChatListRequest>(container.Payload.ToString());
-                    GetChatListResponse getChatListResponse = _serverState.GetChatList(getChatListRequest.Name);
+                    GetChatListResponse getChatListResponse = _dataBaseManager.GetChatList(getChatListRequest.UserId);
                     connection.Send(getChatListResponse.GetContainer());
                     break;
 
                 case nameof(CreateNewChatRequest):
 
                     CreateNewChatRequest createNewChatRequest = JsonConvert.DeserializeObject<CreateNewChatRequest>(container.Payload.ToString());
-                    CreateNewChatResponse createNewChatResponse = _serverState.CreateNewChat(createNewChatRequest.Title, createNewChatRequest.UserIdList);
+                    CreateNewChatResponse createNewChatResponse = _dataBaseManager.CreateNewChat(createNewChatRequest.Title, createNewChatRequest.UserIdList);
                     connection.Send(createNewChatResponse.GetContainer());
                     break;
 
                 case nameof(SendMessageRequest):
 
                     SendMessageRequest messageRequest = JsonConvert.DeserializeObject<SendMessageRequest>(container.Payload.ToString());
-                    _serverState.AddMessage(messageRequest.SenderId, messageRequest.ChatId, messageRequest.Text, messageRequest.SendTime);
+                    _dataBaseManager.AddMessage(messageRequest.SenderId, messageRequest.ChatId, messageRequest.Text, messageRequest.SendTime);
                     var privateMessageResponse = new SendMessageResponse("Success");
                     connection.Send(privateMessageResponse.GetContainer());
                     break;
@@ -111,13 +109,16 @@ namespace MessengerServer
                 case nameof(GetEventListRequest):
 
                     GetEventListRequest getEventListRequest = JsonConvert.DeserializeObject<GetEventListRequest>(container.Payload.ToString());
-                    GetEventListResponse getEventListResponse = _serverState.GetEventLog(getEventListRequest.From, getEventListRequest.To);
+                    GetEventListResponse getEventListResponse = _dataBaseManager.GetEventLog(getEventListRequest.From, getEventListRequest.To);
                     connection.Send(getEventListResponse.GetContainer());
                     break;
             }
         }
         internal void SendUserStatusChangedBroadcast(UserStatusChangedBroadcast broadcast)
         {
+            string state = broadcast.Status == OnlineStatus.Online ? "connected" : "disconnected";
+            Console.WriteLine($"Client '{broadcast.Name}' is {state}");
+
             foreach (var connection in _connections)
             {
                 if (connection.Value.Login != broadcast.Name)
@@ -126,6 +127,7 @@ namespace MessengerServer
                 }
             }
         }
+
         internal void SendNewChatCreatedReponse(Chat chat)
         {
             foreach (var connection in _connections)
@@ -140,8 +142,20 @@ namespace MessengerServer
                 }
             }
         }
+
         internal void SendMessage(Message message)
         {
+            if (message.Chat.Users.Count == 2)
+            {
+                string receiver = message.Chat.Users.Find(user => user.Name != message.Sender.Name).Name;
+                Console.WriteLine($"Client '{message.Sender.Name}' sent message '{message.Text}' for '{receiver}'");
+            }
+            else
+            {
+                string receiver = message.Chat.Title;
+                Console.WriteLine($"Client '{message.Sender.Name}' sent message '{message.Text}' in '{receiver}' chat");
+            }
+
             foreach (var connection in _connections)
             {
                 if (message.Chat.Users.Exists(user => user.UserId == connection.Value.UserId))
@@ -159,9 +173,9 @@ namespace MessengerServer
 
         internal void FreeConnection(Guid connectionId)
         {
-            if (_connections.TryRemove(connectionId, out WsConnection connection) && !string.IsNullOrEmpty(connection.Login))
+            if (_connections.TryRemove(connectionId, out WsConnection connection) && connection.UserId != null)
             {
-                _serverState.SetUserOffline(connection.Login);
+                _dataBaseManager.SetOfflineStatus(connection.UserId.Value);
                 UserStatusChanged?.Invoke(new UserStatusChangedBroadcast(connection.Login, connection.UserId.Value, OnlineStatus.Offline));
             }
         }

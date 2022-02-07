@@ -2,38 +2,38 @@
 {
     using MessengerServer.Common;
     using System;
-    using System.Configuration;
     using System.Collections.Generic;
     using System.Data.Entity;
     using System.Linq;
+    using MessengerServer.Network.Responses;
+    using MessengerServer.Configurations;
 
     public class DataBaseManager
     {
         private string _connectionString;
 
-        private DataBaseContext _dataBase;
+        public event Action<Chat> NewChatCreated;
+        public event Action<Message> MessageReceived;
 
-        public DataBaseManager(ConnectionStringSettings connectionString)
+        public DataBaseManager()
         {
-            _connectionString = connectionString.ToString();
-            _dataBase = new DataBaseContext(_connectionString);
-        }
+            var configManager = new ConfigManager();
+            _connectionString = configManager.ConnectionSettings.ToString();
 
-        public void Connect(string connectionString)
-        {
             try
             {
-                _dataBase = new DataBaseContext(connectionString);
+                DataBaseContext _dataBase = new DataBaseContext(_connectionString);
+                _dataBase?.Dispose();
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                Console.WriteLine(ex);
-                Console.ReadLine();
+                Console.WriteLine("Database connection error:\n" + e.Message);
+                _connectionString = configManager.GetDefaultConnectionString().ToString();
+
+                DataBaseContext _dataBase = new DataBaseContext(_connectionString);
+                _dataBase?.Dispose();
             }
-        }
-        public bool IsDataBaseExists()
-        {
-            return _dataBase.Database.Exists();
+            ResetOnlineStatus();
         }
 
         public void InitializeDataBase()
@@ -106,102 +106,178 @@
                 }
             }
 
-            AddUsers(Users);
-            AddChats(Chats);
-            AddLogEntries(EventList);
-        }
-
-        public List<User> GetUsers()
-        {
-            List<User> userList = new List<User>();
-
-            foreach (User user in _dataBase.Users.Include(user => user.Chats))
+            using (DataBaseContext dataBase = new DataBaseContext(_connectionString))
             {
-                userList.Add(user);
+                dataBase.Users.AddRange(Users);
+                dataBase.Chats.AddRange(Chats);
+                dataBase.EventList.AddRange(EventList);
+                dataBase.SaveChanges();
             }
-            return userList;
         }
-        public List<Chat> GetChats()
+
+        private void ResetOnlineStatus()
         {
-            List<Chat> chatList = new List<Chat>();
-
-            foreach (Chat chat in _dataBase.Chats.Include(chat => chat.Users).Include(chat => chat.Messages))
+            using (DataBaseContext dataBase = new DataBaseContext(_connectionString))
             {
-                chatList.Add(chat);
+                foreach (User user in dataBase.Users)
+                {
+                    user.IsOnline = OnlineStatus.Offline;
+                }
+                dataBase.SaveChanges();
             }
-            return chatList;
         }
-        public List<Message> GetPrivateMessages()
+        public AuthorizationResponse AuthorizeUser(string name)
         {
-            List<Message> messageList = new List<Message>();
-
-            foreach (Message message in _dataBase.Messages)
+            using (DataBaseContext dataBase = new DataBaseContext(_connectionString))
             {
-                messageList.Add(message);
+                User existingUser = dataBase.Users.FirstOrDefault(user => user.Name == name);
+                if (existingUser != null)
+                {
+                    if (existingUser.IsOnline == OnlineStatus.Offline)
+                    {
+                        existingUser.IsOnline = OnlineStatus.Online;
+                        dataBase.SaveChanges();
+                        return new AuthorizationResponse("Already exists", name, existingUser.UserId);
+                    }
+                    else
+                    {
+                        return new AuthorizationResponse("Name is taken");
+                    }
+                }
+                else
+                {
+                    if (dataBase.Chats.FirstOrDefault(chat => chat.Title == "Public chat") == null)
+                    {
+                        dataBase.Chats.Add(new Chat("Public chat", new List<User>()));
+                        dataBase.SaveChanges();
+                    }
+                    Chat publicChat = dataBase.Chats.FirstOrDefault(chat => chat.Title == "Public chat");
+                    User newUser = new User(name, OnlineStatus.Online);
+                    dataBase.Users.Add(newUser);
+                    publicChat?.Users.Add(newUser);
+                    dataBase.SaveChanges();
+                    return new AuthorizationResponse("New user added", name, newUser.UserId);
+                }
             }
-
-            return messageList;
         }
-        public List<Message> GetGroupMessages()
+
+        public void SetOfflineStatus(int userId)
         {
-            List<Message> messageList = new List<Message>();
-
-            foreach (Message message in _dataBase.Messages)
+            using (DataBaseContext dataBase = new DataBaseContext(_connectionString))
             {
-                messageList.Add(message);
+                dataBase.Users.FirstOrDefault(user => user.UserId == userId).IsOnline = OnlineStatus.Offline;
+                dataBase.SaveChanges();
             }
-
-            return messageList;
         }
+
+        public GetUserListResponse GetUserList(int userId)
+        {
+            using (DataBaseContext dataBase = new DataBaseContext(_connectionString))
+            {
+                List<User> userList = dataBase.Users.Include(user => user.Chats).Where(user => user.UserId != userId).ToList();
+                return new GetUserListResponse("Success", userList);
+            }
+        }
+
+        public GetChatListResponse GetChatList(int userId)
+        {
+            using (DataBaseContext dataBase = new DataBaseContext(_connectionString))
+            {
+                List<Chat> chatList = dataBase.Chats.Include(chat => chat.Users).Include(chat => chat.Messages).Where(chat => chat.Users.FirstOrDefault(user => user.UserId == userId) !=null ).ToList();
+                return new GetChatListResponse("Success", chatList);
+            }
+        }
+
+        public CreateNewChatResponse CreateNewChat(string title, List<int> userIdList)
+        {
+            using (DataBaseContext dataBase = new DataBaseContext(_connectionString))
+            {
+                List<User> userList = dataBase.Users.Include(user => user.Chats).ToList();
+
+                Chat newChat = new Chat();
+                int userCounter = 0;
+
+                foreach (User user in userList)
+                {
+                    foreach (int userId in userIdList)
+                    {
+                        if (user.UserId == userId)
+                        {
+                            newChat.Users.Add(user);
+                            userCounter++;
+                        }
+                    }
+                }
+                if (userCounter == userIdList.Count)
+                {
+                    if (userIdList.Count > 2)
+                    {
+                        newChat.Title = title;
+                    }
+                    dataBase.Chats.Add(newChat);
+                    dataBase.SaveChanges();
+                    NewChatCreated?.Invoke(newChat);
+                    return new CreateNewChatResponse("Success");
+                }
+                else
+                {
+                    return new CreateNewChatResponse("Failure");
+                }
+            }
+        }
+
+        public void AddMessage(int senderId, int chatId, string text, DateTime sendTime)
+        {
+            using (DataBaseContext dataBase = new DataBaseContext(_connectionString))
+            {
+                User sender = dataBase.Users.FirstOrDefault(user => user.UserId == senderId);
+
+                if (sender != null)
+                {
+
+                    Chat targetChat = dataBase.Chats.Include(chat => chat.Users).FirstOrDefault(chat => chat.ChatId == chatId);
+
+                    if (targetChat != null)
+                    {
+                        Message message = new Message(sender, targetChat, text, sendTime);
+                        targetChat.Messages.Add(message);
+
+                        dataBase.SaveChanges();
+                        MessageReceived?.Invoke(message);
+                    }
+                    else
+                    {
+                        throw new Exception($"AddMessage: Chat with id = {chatId} does not exist");
+                    }
+                }
+                else
+                {
+                    throw new Exception($"AddMessage: Sender with id = {sender} does not exist");
+                }
+            }
+        }
+
+        public GetEventListResponse GetEventLog(DateTime from, DateTime to)
+        {
+            using (DataBaseContext dataBase = new DataBaseContext(_connectionString))
+            {
+                List<LogEntry> logResponseList = dataBase.EventList.Where(entry => entry.DateTime >= from && entry.DateTime <= to).ToList();
+
+                return new GetEventListResponse("Success", logResponseList);
+            }
+        }
+
         public List<LogEntry> GetEventLog()
         {
             List<LogEntry> eventList = new List<LogEntry>();
-
-            foreach (LogEntry entry in _dataBase.EventList)
+            using (DataBaseContext dataBase = new DataBaseContext(_connectionString))
             {
-                eventList.Add(entry);
+                foreach (LogEntry entry in dataBase.EventList)
+                {
+                    eventList.Add(entry);
+                }
             }
             return eventList;
-        }
-        public void AddUser(User user)
-        {
-            _dataBase.Users.Add(user);
-            _dataBase.SaveChanges();
-        }
-        public void AddUsers(List<User> users)
-        {
-            _dataBase.Users.AddRange(users);
-            _dataBase.SaveChanges();
-        }
-        public void AddChat(Chat chat)
-        {
-            _dataBase.Chats.Add(chat);
-            _dataBase.SaveChanges();
-        }
-        public void AddChats(List<Chat> chats)
-        {
-            _dataBase.Chats.AddRange(chats);
-            _dataBase.SaveChanges();
-        }
-        public void AddMessage(Message message)
-        {
-            _dataBase.Messages.Add(message);
-            _dataBase.SaveChanges();
-        }
-        public void AddMessages(List<Message> messages)
-        {
-            _dataBase.Messages.AddRange(messages);
-            _dataBase.SaveChanges();
-        }
-        public void AddLogEntry(LogEntry entry)
-        {
-            _dataBase.EventList.Add(entry);
-            _dataBase.SaveChanges();
-        }
-        public void AddLogEntries(List<LogEntry> entries)
-        {
-            _dataBase.EventList.AddRange(entries);
-            _dataBase.SaveChanges();
         }
     }
 }

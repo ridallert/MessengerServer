@@ -15,11 +15,11 @@
         {
             Title = title;
         }
+
         public Chat(List<User> users) : this()
         {
             Users.AddRange(users);
         }
-
         public Chat(User userA, User userB) : this()
         {
             Users.Add(userA);
