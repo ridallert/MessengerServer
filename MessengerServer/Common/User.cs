@@ -4,7 +4,6 @@
     using System.Collections.Generic;
     public class User
     {
-        private static int _idCounter;
         public int UserId { get; set; }
         public string Name { get; set; }
         public OnlineStatus IsOnline { get; set; }
@@ -24,7 +23,6 @@
         }
         public User()
         {
-            UserId = ++_idCounter;
             Chats = new List<Chat>();
         }
     }

@@ -9,11 +9,17 @@
         public string Message { get; set; }
         public DateTime DateTime { get; set; }
 
-        public LogEntry(EventType type, string message, DateTime dateTime) : this()
+        public LogEntry(EventType type, string message, DateTime sendTime) : this()
         {
             Type = type;
             Message = message;
-            DateTime = dateTime;
+            DateTime = sendTime;
+        }
+        public LogEntry(EventType type, string message) : this()
+        {
+            Type = type;
+            Message = message;
+            DateTime = DateTime.Now;
         }
         public LogEntry()
         {

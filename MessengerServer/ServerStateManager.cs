@@ -17,100 +17,143 @@ namespace MessengerServer
 {
     public class ServerStateManager
     {
-
-        private DataBaseManager _dataBaseManager;
-
+        private DbContextManager _dataBaseManager;
         public List<User> Users { get; set; }
-        public List<Chat> Chats { get; set; }
-        private List<LogEntry> EventList { get; set; }
 
-        //public event Action<UserStatusChangedBroadcast> UserStatusChanged;
-        
-        public event Action<Message> MessageReceived;
-
-
+        public event EventHandler<UserStatusChangedBroadcast> UserStatusChanged;
+        public event EventHandler<Chat> NewChatCreated;
+        public event EventHandler<Message> MessageReceived;
         public ServerStateManager()
         {
-            //ConfigManager configManager = new ConfigManager();
-            _dataBaseManager = new DataBaseManager();
-            //_dataBaseManager.InitializeDataBase();
+            _dataBaseManager = new DbContextManager();
+        }
+        public void Initialize()
+        {
+            Users = _dataBaseManager.GetUserList();
+        }
+        public AuthorizationResponse AuthorizeUser(string name)
+        {
+            User existingUser = Users.Find(user => user.Name == name);
 
-            
-            EventList = _dataBaseManager.GetEventLog();
+            if (existingUser != null)
+            {
+                if (existingUser.IsOnline == OnlineStatus.Offline)
+                {
+                    return new AuthorizationResponse("Already exists", name, existingUser.UserId);
+                }
+                else
+                {
+                    return new AuthorizationResponse("Name is taken");
+                }
+            }
+            else
+            {
+                User newUser = new User(name, OnlineStatus.Offline);
+                _dataBaseManager.AddUser(newUser);
+
+                if (newUser != null)
+                {
+                    Users.Add(newUser);
+                    return new AuthorizationResponse("New user added", name, newUser.UserId);
+                }
+            }
+
+            return new AuthorizationResponse("Error");
         }
 
-        //public AuthorizationResponse AuthorizeUser(string name)
-        //{     
-        //    return _dataBaseManager.AuthorizeUser(name);
-        //}
-        //public GetUserListResponse GetUserList(int userId)
-        //{
-        //    return _dataBaseManager.GetUserList(userId);
-        //}
-        //public GetChatListResponse GetChatList(int userId)
-        //{
-        //    return _dataBaseManager.GetChatList(userId);
-        //}
-        //public CreateNewChatResponse CreateNewChat(string title, List<int> userIdList)
-        //{
-        //    return _dataBaseManager.CreateNewChat(title, userIdList);
-        //}
+        public void ChangeUserStatus(int userId, OnlineStatus status)
+        {
+            User targetUser = Users.Find(user => user.UserId == userId);
 
-        
+            if (targetUser != null)
+            {
+                targetUser.IsOnline = status;
 
-        
-        
-        //public void AddMessage(int senderId, int chatId, string text, DateTime sendTime)
-        //{
-        //    User sender = Users.Find(user => user.UserId == senderId);
-        //    if (sender != null)
-        //    {
+                string state = (status == OnlineStatus.Online) ? "logged in" : "logged out";
+                _dataBaseManager.AddLogEntry(new LogEntry(EventType.Event, $"{targetUser.Name} is {state}"));
 
-        //        Chat targetChat = Chats.Find(chat => chat.ChatId == chatId);
-        //        if (targetChat != null)
-        //        {
-        //            Message message = new Message(sender, targetChat, text, sendTime);
-        //            targetChat.Messages.Add(message);
-        //            MessageReceived?.Invoke(message);
-        //        }
-        //        else
-        //        {
-        //            throw new Exception($"AddMessage: Chat with id = {chatId} does not exist");
-        //        }
-        //    }
-        //    else
-        //    {
-        //        throw new Exception($"AddMessage: Sender with id = {sender} does not exist");
-        //    }
-        //}
+                UserStatusChanged?.Invoke(this, new UserStatusChangedBroadcast(targetUser.Name, targetUser.UserId, status));
+            }
+            else
+            {
+                throw new Exception($"User with id: {userId} does not exist");
+            }
+        }
 
-        //public GetPrivateMessageListResponse GetPrivateMessageList(string name)
-        //{
-        //    List<Message> messages = new List<Message>();
+        public GetUserListResponse GetPersonalUserList(int userId)
+        {
+            List<User> userList = Users.FindAll(user => user.UserId != userId).ToList();
 
-        //    if (Users.Exists(user => user.Name == name))
-        //    {
-        //        messages = Messages.FindAll(message => message.Sender == name || message.Receiver == name);
-        //    }
+            return new GetUserListResponse("Success", userList);
+        }
 
-        //    return new GetPrivateMessageListResponse("Success", messages);
-        //}
+        public GetChatListResponse GetChatList(int userId)
+        {
+            List<Chat> chatList = _dataBaseManager.GetChatList().FindAll(chat => chat.Users.Exists(user => user.UserId == userId)).ToList();
 
-        //public GetGroupMessageListResponse GetGroupMessageList(string name)
-        //{
-        //    List<GroupMessage> messages = new List<GroupMessage>();
+            //foreach (Chat chat in chatList)
+            //{
+            //    foreach (User chatUser in chat.Users)
+            //    {
+            //        User statusHolder = Users.Find(user => user.UserId == chatUser.UserId);
+            //        if (statusHolder != null)
+            //        {
+            //            chatUser.IsOnline = statusHolder.IsOnline;
+            //        }
+            //    }
+            //}
+            return new GetChatListResponse("Success", chatList);
+        }
 
-        //    foreach (Chat chat in Chats)
-        //    {
-        //        if (chat.Users.Exists(user => user.Name == name))
-        //        {
-        //            messages.AddRange(GroupMessages.FindAll(message => message.ChatName == chat.Title));
-        //        }
-        //    }
+        public SendMessageResponse AddMessage(int senderId, int chatId, string text, DateTime sendTime)
+        {
+            Message message = _dataBaseManager.AddMessage(senderId, chatId, text, sendTime);
 
-        //    return new GetGroupMessageListResponse("Success", messages);
-        //}
+            if (message != null)
+            {
+                LogEntry entry;
+                if (message.Chat.Users.Count > 2 || message.Chat.Title == "Public chat")
+                {
+                    entry = new LogEntry(EventType.Message, $"{message.Sender.Name} sent а private message in '{message.Chat.Title}' group chat", message.SendTime);
+                }
+                else
+                {
+                    entry = new LogEntry(EventType.Message, $"{message.Sender.Name} sent а message to {message.Chat.Users.Find(user => user.Name != message.Sender.Name).Name}", message.SendTime);
+                }
 
-        
+                _dataBaseManager.AddLogEntry(entry);
+                MessageReceived?.Invoke(this, message);
+
+                return new SendMessageResponse("The message has been delivered");
+            }
+
+            return new SendMessageResponse("The message was not delivered");
+        }
+
+        public GetEventListResponse GetEventLog(DateTime from, DateTime to)
+        {
+            List<LogEntry> eventList = _dataBaseManager.GetEventLog(from, to);
+
+            return new GetEventListResponse("Sucess", eventList);
+        }
+
+        public CreateNewChatResponse CreateNewChat(string title, List<int> userIdList)
+        {
+            Chat newChat = _dataBaseManager.AddChat(title, userIdList);
+            if (newChat != null)
+            {
+                foreach (User chatUser in newChat.Users)
+                {
+                    User statusHolder = Users.Find(user => user.UserId == chatUser.UserId);
+                    if (statusHolder != null)
+                    {
+                        chatUser.IsOnline = statusHolder.IsOnline;
+                    }
+                }
+                NewChatCreated?.Invoke(this, newChat);
+                return new CreateNewChatResponse("Chat created");
+            }
+            return new CreateNewChatResponse("An error occurred while creating the chat");
+        }
     }
 }

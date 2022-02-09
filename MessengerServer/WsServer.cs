@@ -16,18 +16,19 @@
     {
         private readonly ConfigManager _configs;
         private readonly ConcurrentDictionary<Guid, WsConnection> _connections;
-        private readonly DataBaseManager _dataBaseManager;
+        private readonly DbContextManager _dbManager;
         private WebSocketServer _server;
-
+        private ServerStateManager _stateManager;
         public WsServer()
         {
             _connections = new ConcurrentDictionary<Guid, WsConnection>();
             _configs = new ConfigManager();
-            _dataBaseManager = new DataBaseManager();
-
-            _dataBaseManager.UserStatusChanged += SendUserStatusChangedBroadcast;
-            _dataBaseManager.NewChatCreated += SendNewChatCreatedReponse;
-            _dataBaseManager.MessageReceived += SendMessage;
+            _dbManager = new DbContextManager();
+            _stateManager = new ServerStateManager();
+            _stateManager.Initialize();
+            _stateManager.UserStatusChanged += SendUserStatusChangedBroadcast;
+            _stateManager.NewChatCreated += SendNewChatCreatedReponse;
+            _stateManager.MessageReceived += SendMessage;
         }
 
         public void Start()
@@ -63,55 +64,55 @@
                 case nameof(AuthorizationRequest):
 
                     AuthorizationRequest authorizationRequest = JsonConvert.DeserializeObject<AuthorizationRequest>(container.Payload.ToString());
-                    AuthorizationResponse authorizationResponse = _dataBaseManager.AuthorizeUser(authorizationRequest.Name);
+                    AuthorizationResponse authorizationResponse = _stateManager.AuthorizeUser(authorizationRequest.Name);
                     connection.Send(authorizationResponse.GetContainer());
 
                     if (authorizationResponse.Result != "Name is taken")
                     {
                         connection.Login = authorizationResponse.Name;
                         connection.UserId = authorizationResponse.UserId;
-                        _dataBaseManager.SetOnlineStatus(authorizationResponse.UserId);
+                        _stateManager.ChangeUserStatus(authorizationResponse.UserId, OnlineStatus.Online);
                     }
                     break;
 
                 case nameof(GetUserListRequest):
 
                     GetUserListRequest getUserListRequest = JsonConvert.DeserializeObject<GetUserListRequest>(container.Payload.ToString());
-                    GetUserListResponse getUserListResponse = _dataBaseManager.GetUserList(getUserListRequest.UserId);
+                    GetUserListResponse getUserListResponse = _stateManager.GetPersonalUserList(getUserListRequest.UserId);
                     connection.Send(getUserListResponse.GetContainer());
                     break;
 
                 case nameof(GetChatListRequest):
 
                     GetChatListRequest getChatListRequest = JsonConvert.DeserializeObject<GetChatListRequest>(container.Payload.ToString());
-                    GetChatListResponse getChatListResponse = _dataBaseManager.GetChatList(getChatListRequest.UserId);
+                    GetChatListResponse getChatListResponse = _stateManager.GetChatList(getChatListRequest.UserId);
                     connection.Send(getChatListResponse.GetContainer());
                     break;
 
                 case nameof(CreateNewChatRequest):
 
                     CreateNewChatRequest createNewChatRequest = JsonConvert.DeserializeObject<CreateNewChatRequest>(container.Payload.ToString());
-                    CreateNewChatResponse createNewChatResponse = _dataBaseManager.CreateNewChat(createNewChatRequest.Title, createNewChatRequest.UserIdList);
+                    CreateNewChatResponse createNewChatResponse = _stateManager.CreateNewChat(createNewChatRequest.Title, createNewChatRequest.UserIdList);
                     connection.Send(createNewChatResponse.GetContainer());
                     break;
 
                 case nameof(SendMessageRequest):
 
                     SendMessageRequest messageRequest = JsonConvert.DeserializeObject<SendMessageRequest>(container.Payload.ToString());
-                    SendMessageResponse messageResponse = _dataBaseManager.AddMessage(messageRequest.SenderId, messageRequest.ChatId, messageRequest.Text, messageRequest.SendTime);
+                    SendMessageResponse messageResponse = _stateManager.AddMessage(messageRequest.SenderId, messageRequest.ChatId, messageRequest.Text, messageRequest.SendTime);
                     connection.Send(messageResponse.GetContainer());
                     break;
 
                 case nameof(GetEventListRequest):
 
                     GetEventListRequest getEventListRequest = JsonConvert.DeserializeObject<GetEventListRequest>(container.Payload.ToString());
-                    GetEventListResponse getEventListResponse = _dataBaseManager.GetEventLog(getEventListRequest.From, getEventListRequest.To);
+                    GetEventListResponse getEventListResponse = _stateManager.GetEventLog(getEventListRequest.From, getEventListRequest.To);
                     connection.Send(getEventListResponse.GetContainer());
                     break;
             }
         }
 
-        internal void SendUserStatusChangedBroadcast(UserStatusChangedBroadcast broadcast)
+        internal void SendUserStatusChangedBroadcast(object sender, UserStatusChangedBroadcast broadcast)
         {
             string state = broadcast.Status == OnlineStatus.Online ? "connected" : "disconnected";
             Console.WriteLine($"Client '{broadcast.Name}' is {state}");
@@ -125,7 +126,7 @@
             }
         }
 
-        internal void SendNewChatCreatedReponse(Chat chat)
+        internal void SendNewChatCreatedReponse(object sender, Chat chat)
         {
             foreach (var connection in _connections)
             {
@@ -140,7 +141,7 @@
             }
         }
 
-        internal void SendMessage(Message message)
+        internal void SendMessage(object sender, Message message)
         {
             if (message.Chat.Users.Count == 2)
             {
@@ -172,7 +173,7 @@
         {
             if (_connections.TryRemove(connectionId, out WsConnection connection) && connection.UserId != null)
             {
-                _dataBaseManager.SetOfflineStatus(connection.UserId.Value);
+                _stateManager.ChangeUserStatus(connection.UserId.Value, OnlineStatus.Offline);
             }
         }
     }

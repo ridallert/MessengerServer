@@ -93,8 +93,9 @@
     <Compile Include="Network\Responses\SendMessageResponse.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="DataBaseManager.cs" />
-    <Compile Include="DataBaseContext.cs" />
+    <Compile Include="DbContextManager.cs" />
+    <Compile Include="MessengerDbContext.cs" />
+    <Compile Include="ServerStateManager.cs" />
     <Compile Include="WsConnection.cs" />
     <Compile Include="WsServer.cs" />
   </ItemGroup>
