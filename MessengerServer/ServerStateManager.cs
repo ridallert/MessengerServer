@@ -91,17 +91,17 @@ namespace MessengerServer
         {
             List<Chat> chatList = _dataBaseManager.GetChatList().FindAll(chat => chat.Users.Exists(user => user.UserId == userId)).ToList();
 
-            //foreach (Chat chat in chatList)
-            //{
-            //    foreach (User chatUser in chat.Users)
-            //    {
-            //        User statusHolder = Users.Find(user => user.UserId == chatUser.UserId);
-            //        if (statusHolder != null)
-            //        {
-            //            chatUser.IsOnline = statusHolder.IsOnline;
-            //        }
-            //    }
-            //}
+            foreach (Chat chat in chatList)
+            {
+                foreach (User chatUser in chat.Users)
+                {
+                    User statusHolder = Users.Find(user => user.UserId == chatUser.UserId);
+                    if (statusHolder != null)
+                    {
+                        chatUser.IsOnline = statusHolder.IsOnline;
+                    }
+                }
+            }
             return new GetChatListResponse("Success", chatList);
         }
 
