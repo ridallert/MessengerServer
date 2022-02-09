@@ -1,9 +1,8 @@
-﻿using MessengerServer.Common;
-using System.Collections.Generic;
-
-
-namespace MessengerServer.Network.Responses
+﻿namespace MessengerServer.Network.Responses
 {
+    using MessengerServer.DataObjects;
+    using System.Collections.Generic;
+
     public class GetUserListResponse
     {
         public string Result { get; set; }
@@ -14,12 +13,6 @@ namespace MessengerServer.Network.Responses
             Result = result;
             ContactList = contactList;
         }
-
-        //public GetContactsResponse(string result)
-        //{
-        //    Result = result;
-        //    UserList = new List<User>();
-        //}
 
         public MessageContainer GetContainer()
         {

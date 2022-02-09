@@ -1,9 +1,8 @@
-﻿namespace MessengerServer.Common
+﻿namespace MessengerServer.DataObjects
 {
     using System;
     public class LogEntry
     {
-        private static int _idCounter;
         public int LogEntryId { get; set; }
         public EventType Type { get; set; }
         public string Message { get; set; }
@@ -21,9 +20,6 @@
             Message = message;
             DateTime = DateTime.Now;
         }
-        public LogEntry()
-        {
-            LogEntryId = ++_idCounter;
-        }
+        public LogEntry() {}
     }
 }

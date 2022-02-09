@@ -1,7 +1,7 @@
 ﻿namespace MessengerServer.Data
 {
     using System.Data.Entity;
-    using MessengerServer.Common;
+    using MessengerServer.DataObjects;
 
     public class MessengerDbContext : DbContext
     {

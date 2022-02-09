@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace MessengerServer.Network.Responses
+﻿namespace MessengerServer.Network.Responses
 {
+    using System;
+
     public class MessageReceivedResponse
     {
         public int MessageId { get; set; }

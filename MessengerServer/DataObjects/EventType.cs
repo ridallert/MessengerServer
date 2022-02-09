@@ -1,4 +1,4 @@
-﻿namespace MessengerServer.Common
+﻿namespace MessengerServer.DataObjects
 {
     public enum EventType
     {

@@ -1,4 +1,4 @@
-﻿namespace MessengerServer.Common
+﻿namespace MessengerServer.DataObjects
 {
     using Newtonsoft.Json;
     using System;
@@ -13,11 +13,6 @@
         public string Text { get; set; }
         public DateTime SendTime { get; set; }
 
-        //[JsonConstructor]
-        //public Message(int messageId, User sender, Chat chat, string text, DateTime sendTime) : this(sender, chat, text, sendTime)
-        //{
-        //    MessageId = messageId;
-        //}
         public Message(User sender, Chat chat, string text, DateTime sendTime) : this()
         {
             Sender = sender;
@@ -26,6 +21,7 @@
             Text = text;
             SendTime = sendTime;
         }
+
         public Message()
         {
         }

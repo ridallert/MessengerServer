@@ -1,8 +1,8 @@
-﻿namespace MessengerServer.Common
+﻿namespace MessengerServer.DataObjects
 {
     public enum OnlineStatus
     {
         Online,
-        Offline
+        Offline,
     }
 }

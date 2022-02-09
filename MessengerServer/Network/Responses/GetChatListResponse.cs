@@ -1,9 +1,8 @@
-﻿using MessengerServer.Common;
-using System.Collections.Generic;
-
-
-namespace MessengerServer.Network.Responses
+﻿namespace MessengerServer.Network.Responses
 {
+    using MessengerServer.DataObjects;
+    using System.Collections.Generic;
+
     public class GetChatListResponse
     {
         public string Result { get; set; }

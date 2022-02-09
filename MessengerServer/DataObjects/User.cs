@@ -1,4 +1,4 @@
-﻿namespace MessengerServer.Common
+﻿namespace MessengerServer.DataObjects
 {
     using Newtonsoft.Json;
     using System.Collections.Generic;

@@ -1,12 +1,7 @@
-﻿using MessengerServer.Common;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace MessengerServer.Network.Responses
+﻿namespace MessengerServer.Network.Responses
 {
+    using MessengerServer.DataObjects;
+
     public class NewChatCreatedResponse
     {
         public Chat Chat { get; set; }

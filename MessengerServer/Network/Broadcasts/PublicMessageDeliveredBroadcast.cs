@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace MessengerServer.Network.Broadcasts
+﻿namespace MessengerServer.Network.Broadcasts
 {
+    using System;
+
     class PublicMessageDeliveredBroadcast
     {
         public string Sender { get; set; }

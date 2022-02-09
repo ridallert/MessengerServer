@@ -1,6 +1,6 @@
 ﻿namespace MessengerServer
 {
-    using MessengerServer.Common;
+    using MessengerServer.DataObjects;
     using MessengerServer.Configurations;
     using MessengerServer.Network;
     using MessengerServer.Network.Broadcasts;
@@ -16,14 +16,14 @@
     {
         private readonly ConfigManager _configs;
         private readonly ConcurrentDictionary<Guid, WsConnection> _connections;
-        private readonly DbContextManager _dbManager;
+        private readonly MessengerDbRepository _dbManager;
         private WebSocketServer _server;
         private ServerStateManager _stateManager;
         public WsServer()
         {
             _connections = new ConcurrentDictionary<Guid, WsConnection>();
             _configs = new ConfigManager();
-            _dbManager = new DbContextManager();
+            _dbManager = new MessengerDbRepository();
             _stateManager = new ServerStateManager();
             _stateManager.Initialize();
             _stateManager.UserStatusChanged += SendUserStatusChangedBroadcast;

@@ -1,12 +1,8 @@
-﻿using MessengerServer.Common;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace MessengerServer.Network.Responses
+﻿namespace MessengerServer.Network.Responses
 {
+    using MessengerServer.DataObjects;
+    using System.Collections.Generic;
+
     public class GetMessageListResponse
     {
         public string Result { get; set; }
@@ -17,12 +13,6 @@ namespace MessengerServer.Network.Responses
             Result = result;
             MessageList = messageList;
         }
-
-        //public GetMessageListResponse(string result)
-        //{
-        //    Result = result;
-        //    MessageList = new List<Message>();
-        //}
 
         public MessageContainer GetContainer()
         {

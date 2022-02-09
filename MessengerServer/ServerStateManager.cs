@@ -1,23 +1,15 @@
-﻿using MessengerServer.Common;
-using MessengerServer.Network;
-using MessengerServer.Network.Broadcasts;
-using MessengerServer.Network.EventArgs;
-using MessengerServer.Configurations;
-using MessengerServer.Network.Responses;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Data.Common;
-using System.Data.Entity;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace MessengerServer
+﻿namespace MessengerServer
 {
+    using MessengerServer.DataObjects;
+    using MessengerServer.Network.Broadcasts;
+    using MessengerServer.Network.Responses;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+
     public class ServerStateManager
     {
-        private DbContextManager _dataBaseManager;
+        private MessengerDbRepository _repository;
         public List<User> Users { get; set; }
 
         public event EventHandler<UserStatusChangedBroadcast> UserStatusChanged;
@@ -25,11 +17,12 @@ namespace MessengerServer
         public event EventHandler<Message> MessageReceived;
         public ServerStateManager()
         {
-            _dataBaseManager = new DbContextManager();
+            _repository = new MessengerDbRepository();
+            Users = new List<User>();
         }
         public void Initialize()
         {
-            Users = _dataBaseManager.GetUserList();
+            Users = _repository.GetUserList();
         }
         public AuthorizationResponse AuthorizeUser(string name)
         {
@@ -39,26 +32,28 @@ namespace MessengerServer
             {
                 if (existingUser.IsOnline == OnlineStatus.Offline)
                 {
-                    return new AuthorizationResponse("Already exists", name, existingUser.UserId);
+                    return new AuthorizationResponse("Success", name, existingUser.UserId);
                 }
                 else
                 {
+                    _repository.AddLogEntry(new LogEntry(EventType.Error, $"Authorization error: Name '{name}' is taken"));
                     return new AuthorizationResponse("Name is taken");
                 }
             }
             else
             {
                 User newUser = new User(name, OnlineStatus.Offline);
-                _dataBaseManager.AddUser(newUser);
+                _repository.AddUser(newUser);
 
                 if (newUser != null)
                 {
                     Users.Add(newUser);
-                    return new AuthorizationResponse("New user added", name, newUser.UserId);
+                    return new AuthorizationResponse("Success", name, newUser.UserId);
                 }
             }
 
-            return new AuthorizationResponse("Error");
+            _repository.AddLogEntry(new LogEntry(EventType.Error, $"Authorization error"));
+            return new AuthorizationResponse("Authorization error");
         }
 
         public void ChangeUserStatus(int userId, OnlineStatus status)
@@ -68,14 +63,13 @@ namespace MessengerServer
             if (targetUser != null)
             {
                 targetUser.IsOnline = status;
-
                 string state = (status == OnlineStatus.Online) ? "logged in" : "logged out";
-                _dataBaseManager.AddLogEntry(new LogEntry(EventType.Event, $"{targetUser.Name} is {state}"));
-
+                _repository.AddLogEntry(new LogEntry(EventType.Event, $"{targetUser.Name} is {state}"));
                 UserStatusChanged?.Invoke(this, new UserStatusChangedBroadcast(targetUser.Name, targetUser.UserId, status));
             }
             else
             {
+                _repository.AddLogEntry(new LogEntry(EventType.Error, $"Status change error: User with id: {userId} is not found"));
                 throw new Exception($"User with id: {userId} does not exist");
             }
         }
@@ -83,31 +77,35 @@ namespace MessengerServer
         public GetUserListResponse GetPersonalUserList(int userId)
         {
             List<User> userList = Users.FindAll(user => user.UserId != userId).ToList();
-
             return new GetUserListResponse("Success", userList);
         }
 
         public GetChatListResponse GetChatList(int userId)
         {
-            List<Chat> chatList = _dataBaseManager.GetChatList().FindAll(chat => chat.Users.Exists(user => user.UserId == userId)).ToList();
-
-            foreach (Chat chat in chatList)
+            List<Chat> chatList = _repository.GetChatList().FindAll(chat => chat.Users.Exists(user => user.UserId == userId)).ToList();
+            if (chatList != null)
             {
-                foreach (User chatUser in chat.Users)
+                foreach (Chat chat in chatList)
                 {
-                    User statusHolder = Users.Find(user => user.UserId == chatUser.UserId);
-                    if (statusHolder != null)
+                    foreach (User chatUser in chat.Users)
                     {
-                        chatUser.IsOnline = statusHolder.IsOnline;
+                        User statusHolder = Users.Find(user => user.UserId == chatUser.UserId);
+                        if (statusHolder != null)
+                        {
+                            chatUser.IsOnline = statusHolder.IsOnline;
+                        }
                     }
                 }
+                return new GetChatListResponse("Success", chatList);
             }
-            return new GetChatListResponse("Success", chatList);
+
+            _repository.AddLogEntry(new LogEntry(EventType.Error, $"'GetChatList' request processing error"));
+            return new GetChatListResponse("Failure", chatList);
         }
 
         public SendMessageResponse AddMessage(int senderId, int chatId, string text, DateTime sendTime)
         {
-            Message message = _dataBaseManager.AddMessage(senderId, chatId, text, sendTime);
+            Message message = _repository.AddMessage(senderId, chatId, text, sendTime);
 
             if (message != null)
             {
@@ -121,25 +119,31 @@ namespace MessengerServer
                     entry = new LogEntry(EventType.Message, $"{message.Sender.Name} sent а message to {message.Chat.Users.Find(user => user.Name != message.Sender.Name).Name}", message.SendTime);
                 }
 
-                _dataBaseManager.AddLogEntry(entry);
+                _repository.AddLogEntry(entry);
                 MessageReceived?.Invoke(this, message);
 
                 return new SendMessageResponse("The message has been delivered");
             }
 
+            _repository.AddLogEntry(new LogEntry(EventType.Error, $"'SendMessageRequest' processing error"));
             return new SendMessageResponse("The message was not delivered");
         }
 
         public GetEventListResponse GetEventLog(DateTime from, DateTime to)
         {
-            List<LogEntry> eventList = _dataBaseManager.GetEventLog(from, to);
+            List<LogEntry> eventList = _repository.GetEventLog(from, to);
+            if (eventList != null)
+            {
+                return new GetEventListResponse("Sucess", eventList);
+            }
 
-            return new GetEventListResponse("Sucess", eventList);
+            _repository.AddLogEntry(new LogEntry(EventType.Error, $"'GetEventLog' request processing error"));
+            return new GetEventListResponse("Failure", eventList);
         }
 
         public CreateNewChatResponse CreateNewChat(string title, List<int> userIdList)
         {
-            Chat newChat = _dataBaseManager.AddChat(title, userIdList);
+            Chat newChat = _repository.AddChat(title, userIdList);
             if (newChat != null)
             {
                 foreach (User chatUser in newChat.Users)
@@ -153,6 +157,8 @@ namespace MessengerServer
                 NewChatCreated?.Invoke(this, newChat);
                 return new CreateNewChatResponse("Chat created");
             }
+
+            _repository.AddLogEntry(new LogEntry(EventType.Error, $"'CreateNewChat' request processing error"));
             return new CreateNewChatResponse("An error occurred while creating the chat");
         }
     }

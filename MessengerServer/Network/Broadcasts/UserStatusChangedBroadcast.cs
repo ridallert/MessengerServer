@@ -1,13 +1,6 @@
-﻿
-using MessengerServer.Common;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace MessengerServer.Network.Broadcasts
+﻿namespace MessengerServer.Network.Broadcasts
 {
+    using MessengerServer.DataObjects;
     public class UserStatusChangedBroadcast
     {
         public string Name { get; set; }
