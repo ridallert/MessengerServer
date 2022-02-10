@@ -1,35 +1,51 @@
 ﻿namespace MessengerServer
 {
+    using System;
+    using System.Collections.Concurrent;
+    using System.Linq;
+
     using MessengerServer.DataObjects;
     using MessengerServer.Configurations;
     using MessengerServer.Network;
     using MessengerServer.Network.Broadcasts;
     using MessengerServer.Network.Requests;
     using MessengerServer.Network.Responses;
+
     using Newtonsoft.Json;
-    using System;
-    using System.Collections.Concurrent;
-    using System.Linq;
+   
     using WebSocketSharp.Server;
 
-    class WsServer
+    public class WsServer
     {
+        #region Fields
+
         private readonly ConfigManager _configs;
         private readonly ConcurrentDictionary<Guid, WsConnection> _connections;
         private readonly MessengerDbRepository _dbManager;
         private WebSocketServer _server;
         private ServerStateManager _stateManager;
+
+        #endregion //Fields
+
+        #region Constructors
+
         public WsServer()
         {
             _connections = new ConcurrentDictionary<Guid, WsConnection>();
             _configs = new ConfigManager();
             _dbManager = new MessengerDbRepository();
             _stateManager = new ServerStateManager();
+
             _stateManager.Initialize();
+
             _stateManager.UserStatusChanged += SendUserStatusChangedBroadcast;
             _stateManager.NewChatCreated += SendNewChatCreatedReponse;
             _stateManager.MessageReceived += SendMessage;
         }
+
+        #endregion //Constructors
+
+        #region Methods
 
         public void Start()
         {
@@ -57,7 +73,9 @@
         internal void HandleRequest(Guid clientId, MessageContainer container)
         {
             if (!_connections.TryGetValue(clientId, out WsConnection connection))
+            {
                 return;
+            }
 
             switch (container.Identifier)
             {
@@ -71,7 +89,7 @@
                     {
                         connection.Login = authorizationResponse.Name;
                         connection.UserId = authorizationResponse.UserId;
-                        _stateManager.ChangeUserStatus(authorizationResponse.UserId, OnlineStatus.Online);
+                        _stateManager.ChangeUserStatus(authorizationResponse.UserId, UserStatus.Online);
                     }
                     break;
 
@@ -114,7 +132,7 @@
 
         internal void SendUserStatusChangedBroadcast(object sender, UserStatusChangedBroadcast broadcast)
         {
-            string state = broadcast.Status == OnlineStatus.Online ? "connected" : "disconnected";
+            string state = broadcast.Status == UserStatus.Online ? "connected" : "disconnected";
             Console.WriteLine($"Client '{broadcast.Name}' is {state}");
 
             foreach (var connection in _connections)
@@ -173,8 +191,10 @@
         {
             if (_connections.TryRemove(connectionId, out WsConnection connection) && connection.UserId != null)
             {
-                _stateManager.ChangeUserStatus(connection.UserId.Value, OnlineStatus.Offline);
+                _stateManager.ChangeUserStatus(connection.UserId.Value, UserStatus.Offline);
             }
         }
+        
+        #endregion //Methods
     }
 }

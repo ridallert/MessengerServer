@@ -4,12 +4,22 @@
 
     public class NewChatCreatedResponse
     {
+        #region Properties
+
         public Chat Chat { get; set; }
+
+        #endregion //Properties
+
+        #region Constructors
 
         public NewChatCreatedResponse(Chat chat)
         {
             Chat = chat;
         }
+
+        #endregion //Constructors
+
+        #region Methods
 
         public MessageContainer GetContainer()
         {
@@ -21,5 +31,7 @@
 
             return container;
         }
+
+        #endregion //Methods
     }
 }

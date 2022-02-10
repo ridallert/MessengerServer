@@ -4,12 +4,23 @@
 
     public class MessageReceivedResponse
     {
+        #region Properties
+
         public int MessageId { get; set; }
+
         public int SenderId { get; set; }
+
         public int ChatId { get; set; }
+
         public string SenderName { get; set; }
+
         public string Text { get; set; }
+
         public DateTime SendTime { get; set; }
+
+        #endregion //Properties
+
+        #region Constructors
 
         public MessageReceivedResponse(int messageId, int senderId, int chatId, string senderName, string text, DateTime sendTime)
         {
@@ -21,6 +32,10 @@
             SendTime = sendTime;
         }
 
+        #endregion //Constructors
+
+        #region Methods
+
         public MessageContainer GetContainer()
         {
             MessageContainer container = new MessageContainer
@@ -31,5 +46,7 @@
 
             return container;
         }
+
+        #endregion //Methods
     }
 }

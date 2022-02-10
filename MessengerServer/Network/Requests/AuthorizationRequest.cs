@@ -1,13 +1,23 @@
 ﻿namespace MessengerServer.Network.Requests
 {
-    class AuthorizationRequest
+    public class AuthorizationRequest
     {
+        #region Properties
+
         public string Name { get; set; }
+
+        #endregion //Properties
+
+        #region Constructors
 
         public AuthorizationRequest(string name)
         {
             Name = name;
         }
+
+        #endregion //Constructors
+
+        #region Methods
 
         public MessageContainer GetContainer()
         {
@@ -19,5 +29,7 @@
 
             return container;
         }
+
+        #endregion //Methods
     }
 }

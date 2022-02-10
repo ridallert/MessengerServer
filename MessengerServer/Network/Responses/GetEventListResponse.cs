@@ -1,18 +1,30 @@
 ﻿namespace MessengerServer.Network.Responses
 {
     using System.Collections.Generic;
+
     using MessengerServer.DataObjects;
 
     public class GetEventListResponse
     {
+        #region Properties
+
         public string Result { get; set; }
+
         public List<LogEntry> EventList {get;set;}
+
+        #endregion //Properties
+
+        #region Constructors
 
         public GetEventListResponse(string result, List<LogEntry> eventList)
         {
             Result = result;
             EventList = eventList;
         }
+
+        #endregion //Constructors
+
+        #region Methods
 
         public MessageContainer GetContainer()
         {
@@ -24,5 +36,7 @@
 
             return container;
         }
+
+        #endregion //Methods
     }
 }

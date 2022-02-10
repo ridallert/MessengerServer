@@ -1,16 +1,28 @@
 ﻿namespace MessengerServer.Network.Requests
 {
     using System;
-    class GetEventListRequest
+
+    public class GetEventListRequest
     {
+        #region Properties
+
         public DateTime From { get; set; }
+
         public DateTime To { get; set; }
+
+        #endregion //Properties
+
+        #region Constructors
 
         public GetEventListRequest(DateTime from, DateTime to)
         {
             From = from;
             To = to;
         }
+
+        #endregion //Constructors
+
+        #region Methods
 
         public MessageContainer GetContainer()
         {
@@ -22,5 +34,7 @@
 
             return container;
         }
+
+        #endregion //Methods
     }
 }

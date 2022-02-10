@@ -1,36 +1,59 @@
 ﻿namespace MessengerServer
 {
-    using MessengerServer.DataObjects;
-    using MessengerServer.Network.Broadcasts;
-    using MessengerServer.Network.Responses;
     using System;
     using System.Collections.Generic;
     using System.Linq;
 
+    using MessengerServer.DataObjects;
+    using MessengerServer.Network.Broadcasts;
+    using MessengerServer.Network.Responses;    
+
     public class ServerStateManager
     {
+        #region Fields
+
         private MessengerDbRepository _repository;
+
+        #endregion //Fields
+
+        #region Properties
+
         public List<User> Users { get; set; }
+
+        #endregion //Properties
+
+        #region Events
 
         public event EventHandler<UserStatusChangedBroadcast> UserStatusChanged;
         public event EventHandler<Chat> NewChatCreated;
         public event EventHandler<Message> MessageReceived;
+
+        #endregion //Events
+
+        #region Constructors
+
         public ServerStateManager()
         {
             _repository = new MessengerDbRepository();
             Users = new List<User>();
         }
+
+        #endregion //Constructors
+
+        #region Methods
+
         public void Initialize()
         {
             Users = _repository.GetUserList();
         }
+
         public AuthorizationResponse AuthorizeUser(string name)
         {
             User existingUser = Users.Find(user => user.Name == name);
 
             if (existingUser != null)
             {
-                if (existingUser.IsOnline == OnlineStatus.Offline)
+                if (existingUser.IsOnline == UserStatus.Offline)
                 {
                     return new AuthorizationResponse("Success", name, existingUser.UserId);
                 }
@@ -42,7 +65,7 @@
             }
             else
             {
-                User newUser = new User(name, OnlineStatus.Offline);
+                User newUser = new User(name, UserStatus.Offline);
                 _repository.AddUser(newUser);
 
                 if (newUser != null)
@@ -56,14 +79,14 @@
             return new AuthorizationResponse("Authorization error");
         }
 
-        public void ChangeUserStatus(int userId, OnlineStatus status)
+        public void ChangeUserStatus(int userId, UserStatus status)
         {
             User targetUser = Users.Find(user => user.UserId == userId);
 
             if (targetUser != null)
             {
                 targetUser.IsOnline = status;
-                string state = (status == OnlineStatus.Online) ? "logged in" : "logged out";
+                string state = (status == UserStatus.Online) ? "logged in" : "logged out";
                 _repository.AddLogEntry(new LogEntry(EventType.Event, $"{targetUser.Name} is {state}"));
                 UserStatusChanged?.Invoke(this, new UserStatusChangedBroadcast(targetUser.Name, targetUser.UserId, status));
             }
@@ -83,6 +106,7 @@
         public GetChatListResponse GetChatList(int userId)
         {
             List<Chat> chatList = _repository.GetChatList().FindAll(chat => chat.Users.Exists(user => user.UserId == userId)).ToList();
+
             if (chatList != null)
             {
                 foreach (Chat chat in chatList)
@@ -110,6 +134,7 @@
             if (message != null)
             {
                 LogEntry entry;
+
                 if (message.Chat.Users.Count > 2 || message.Chat.Title == "Public chat")
                 {
                     entry = new LogEntry(EventType.Message, $"{message.Sender.Name} sent а private message in '{message.Chat.Title}' group chat", message.SendTime);
@@ -121,7 +146,6 @@
 
                 _repository.AddLogEntry(entry);
                 MessageReceived?.Invoke(this, message);
-
                 return new SendMessageResponse("The message has been delivered");
             }
 
@@ -132,6 +156,7 @@
         public GetEventListResponse GetEventLog(DateTime from, DateTime to)
         {
             List<LogEntry> eventList = _repository.GetEventLog(from, to);
+
             if (eventList != null)
             {
                 return new GetEventListResponse("Sucess", eventList);
@@ -144,6 +169,7 @@
         public CreateNewChatResponse CreateNewChat(string title, List<int> userIdList)
         {
             Chat newChat = _repository.AddChat(title, userIdList);
+
             if (newChat != null)
             {
                 foreach (User chatUser in newChat.Users)
@@ -154,6 +180,7 @@
                         chatUser.IsOnline = statusHolder.IsOnline;
                     }
                 }
+
                 NewChatCreated?.Invoke(this, newChat);
                 return new CreateNewChatResponse("Chat created");
             }
@@ -161,5 +188,7 @@
             _repository.AddLogEntry(new LogEntry(EventType.Error, $"'CreateNewChat' request processing error"));
             return new CreateNewChatResponse("An error occurred while creating the chat");
         }
+
+        #endregion //Methods
     }
 }

@@ -2,12 +2,21 @@
 {
     using System;
 
-    class SendMessageRequest
+    public class SendMessageRequest
     {
+        #region Properties
+
         public int SenderId { get; set; }
+
         public int ChatId { get; set; }
+
         public string Text { get; set; }
+
         public DateTime SendTime { get; set; }
+
+        #endregion //Properties
+
+        #region Constructors
 
         public SendMessageRequest(int senderId, int chatId, string text, DateTime sendTime)
         {
@@ -16,6 +25,10 @@
             Text = text;
             SendTime = sendTime;
         }
+
+        #endregion //Constructors
+
+        #region Methods
 
         public MessageContainer GetContainer()
         {
@@ -27,5 +40,7 @@
 
             return container;
         }
+
+        #endregion //Methods
     }
 }

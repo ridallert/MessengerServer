@@ -1,18 +1,30 @@
 ﻿namespace MessengerServer.Network.Responses
 {
-    using MessengerServer.DataObjects;
     using System.Collections.Generic;
+
+    using MessengerServer.DataObjects;
 
     public class GetChatListResponse
     {
+        #region Properties
+
         public string Result { get; set; }
+
         public List<Chat> ChatList { get; set; }
+
+        #endregion //Properties
+
+        #region Constructors
 
         public GetChatListResponse(string result, List<Chat> chatList)
         {
             Result = result;
             ChatList = chatList;
         }
+
+        #endregion //Constructors
+
+        #region Methods
 
         public MessageContainer GetContainer()
         {
@@ -24,5 +36,7 @@
 
             return container;
         }
+
+        #endregion //Methods
     }
 }

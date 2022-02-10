@@ -1,25 +1,41 @@
 ﻿namespace MessengerServer
 {
-    using MessengerServer.Network;
-    using Newtonsoft.Json;
     using System;
     using System.Collections.Concurrent;
     using System.Threading;
+    using System.Timers;
+
+    using MessengerServer.Network;
+
+    using Newtonsoft.Json;
+
     using WebSocketSharp;
     using WebSocketSharp.Server;
-    using System.Timers;
 
     class WsConnection : WebSocketBehavior
     {
+        #region Fields
+
         private readonly ConcurrentQueue<MessageContainer> _sendQueue;
         private WsServer _server;
         private int _sending;
         private System.Timers.Timer _timer;
+
+        #endregion //Fields
+
+        #region Properties
+
         public Guid Id { get; }
+
         public string Login { get; set; }
+
         public int? UserId { get; set; }
 
         public bool IsConnected => Context.WebSocket?.ReadyState == WebSocketState.Open;
+
+        #endregion //Properties
+
+        #region Constructors
 
         public WsConnection(WsServer server, int timeout)
         {            
@@ -33,25 +49,23 @@
             Id = Guid.NewGuid();
             _timer.Start();
         }
-        private void ResetTimer()
-        {
-            _timer.Stop();
-            _timer.Start();
-        }
-        private void OnTimerElapsed(object sender, ElapsedEventArgs e)
-        {
-            Close();
-            Console.WriteLine($"Client '{Login}' is disabled due to inactivity");
-        }
+
+        #endregion //Constructors
+
+        #region Methods
 
         public void Send(MessageContainer container)
         {
             if (!IsConnected)
+            {
                 return;
+            }
 
             _sendQueue.Enqueue(container);
             if (Interlocked.CompareExchange(ref _sending, 1, 0) == 0)
+            {
                 SendImpl();
+            }
         }
 
         public void Close()
@@ -93,17 +107,35 @@
             SendImpl();
         }
 
+        private void ResetTimer()
+        {
+            _timer.Stop();
+            _timer.Start();
+        }
+
+        private void OnTimerElapsed(object sender, ElapsedEventArgs e)
+        {
+            Close();
+            Console.WriteLine($"Client '{Login}' is disabled due to inactivity");
+        }
+
         private void SendImpl()
         {
             if (!IsConnected)
+            {
                 return;
+            }
 
             if (!_sendQueue.TryDequeue(out var message) && Interlocked.CompareExchange(ref _sending, 0, 1) == 1)
+            {
                 return;
+            }
 
             var settings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
             string serializedMessage = JsonConvert.SerializeObject(message, settings);
             SendAsync(serializedMessage, SendCompleted);
         }
+
+        #endregion //Methods
     }
 }

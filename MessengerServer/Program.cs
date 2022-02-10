@@ -1,8 +1,11 @@
 ﻿namespace MessengerServer
 {
     using System;
+
     class Program
     {
+        #region Methods
+
         static void Main()
         {
             try
@@ -20,5 +23,7 @@
                 Console.ReadLine();
             }
         }
+
+        #endregion //Methods
     }
 }

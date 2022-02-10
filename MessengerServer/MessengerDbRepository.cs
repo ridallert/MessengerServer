@@ -1,16 +1,23 @@
 ﻿namespace MessengerServer
 {
-    using MessengerServer.DataObjects;
-    using MessengerServer.Data;
     using System;
     using System.Collections.Generic;
     using System.Data.Entity;
     using System.Linq;
-    using MessengerServer.Configurations;
 
+    using MessengerServer.Configurations;
+    using MessengerServer.DataObjects;
+    using MessengerServer.Data;
+    
     public class MessengerDbRepository
     {
+        #region Fields
+
         private string _connectionString;
+
+        #endregion //Fields
+
+        #region Constructors
 
         public MessengerDbRepository()
         {
@@ -30,8 +37,11 @@
                 MessengerDbContext _dataBase = new MessengerDbContext(_connectionString);
                 _dataBase?.Dispose();
             }
-        
         }
+
+        #endregion //Constructors
+
+        #region Methods
 
         public bool AddUser(User newUser)
         {
@@ -54,30 +64,6 @@
             catch
             {
                 return false;
-            }
-        }
-
-        public List<User> GetUserList()
-        {
-            using (MessengerDbContext dataBase = new MessengerDbContext(_connectionString))
-            {
-                return dataBase.Users.ToList();
-            }
-        }
-
-        public List<Chat> GetChatList()
-        {
-            try
-            {
-                using (MessengerDbContext dataBase = new MessengerDbContext(_connectionString))
-                {
-                    return dataBase.Chats.Include(chat => chat.Users).Include(chat => chat.Messages).ToList();
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                return null;
             }
         }
 
@@ -114,6 +100,7 @@
                 }
             }
         }
+
         public Message AddMessage(int senderId, int chatId, string text, DateTime sendTime)
         {
             try
@@ -161,6 +148,30 @@
             }
         }
 
+        public List<User> GetUserList()
+        {
+            using (MessengerDbContext dataBase = new MessengerDbContext(_connectionString))
+            {
+                return dataBase.Users.ToList();
+            }
+        }
+
+        public List<Chat> GetChatList()
+        {
+            try
+            {
+                using (MessengerDbContext dataBase = new MessengerDbContext(_connectionString))
+                {
+                    return dataBase.Chats.Include(chat => chat.Users).Include(chat => chat.Messages).ToList();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return null;
+            }
+        }
+
         public List<LogEntry> GetEventLog(DateTime from, DateTime to)
         {
             using (MessengerDbContext dataBase = new MessengerDbContext(_connectionString))
@@ -168,5 +179,7 @@
                 return dataBase.EventList.Where(entry => entry.DateTime >= from && entry.DateTime <= to).ToList();
             }
         }
+
+        #endregion //Methods
     }
 }

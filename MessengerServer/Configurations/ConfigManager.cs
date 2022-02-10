@@ -4,15 +4,32 @@
     using System.Configuration;
     using System.IO;
     using System.Net;
+
     using Newtonsoft.Json;
+
     public class ConfigManager
     {
+        #region Fields
+
         private readonly Configurations _defaultConfigs;
+
         private readonly string _defaultPath;
+
+        #endregion //Fields
+
+        #region Properties
+
         public int Port { get; }
+
         public int Timeout { get; }
+
         public IPAddress IpAddress { get; }
+
         public ConnectionStringSettings ConnectionSettings { get; }
+
+        #endregion //Properties
+
+        #region Constructors
 
         public ConfigManager()
         {
@@ -23,7 +40,7 @@
                 ConnectionString = "Data Source=(localdb)\\MSSQLLocalDB; Initial Catalog=ServerState; Integrated Security=True;",
                 Provider = "System.Data.SqlClient",
                 DataBaseName = "ServerDataBase",
-                Timeout = 10,
+                Timeout = 600,
             };
 
             _defaultPath = Environment.CurrentDirectory + "\\Configs.json";
@@ -42,10 +59,16 @@
             Timeout = configs.Timeout;
             ConnectionSettings = new ConnectionStringSettings(configs.DataBaseName, configs.ConnectionString, configs.Provider);
         }
+
+        #endregion //Constructors
+
+        #region Methods
+
         public ConnectionStringSettings GetDefaultConnectionString()
         {
             return new ConnectionStringSettings(_defaultConfigs.DataBaseName, _defaultConfigs.ConnectionString, _defaultConfigs.Provider);
         }
+
         private void SaveToFile(Configurations configs, string path)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path));
@@ -62,6 +85,7 @@
                 serializer.Serialize(writer, configs);
             }
         }
+
         private Configurations LoadFromFile(string path)
         {
             var configs = new Configurations();
@@ -94,5 +118,7 @@
 
             return configs;
         }
+
+        #endregion //Methods
     }
 }
