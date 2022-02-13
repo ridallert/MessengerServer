@@ -8,7 +8,7 @@
     using MessengerServer.Configurations;
     using MessengerServer.DataObjects;
     using MessengerServer.Data;
-    
+
     public class MessengerDbRepository
     {
         #region Fields
@@ -27,15 +27,15 @@
             try
             {
                 MessengerDbContext _dataBase = new MessengerDbContext(_connectionString);
+
+                _dataBase.Users.ToList();
                 _dataBase?.Dispose();
             }
             catch (Exception e)
             {
                 Console.WriteLine("Database connection error:\n" + e.Message);
                 _connectionString = configManager.GetDefaultConnectionString().ToString();
-
-                MessengerDbContext _dataBase = new MessengerDbContext(_connectionString);
-                _dataBase?.Dispose();
+                Console.WriteLine("Default settings applied");
             }
         }
 

@@ -80,6 +80,7 @@
 
         protected override void OnClose(CloseEventArgs e)
         {
+            _timer.Stop();
             _server.FreeConnection(Id);
         }
 
@@ -115,7 +116,7 @@
 
         private void OnTimerElapsed(object sender, ElapsedEventArgs e)
         {
-            Close();
+            _server.FreeConnection(Id);
             Console.WriteLine($"Client '{Login}' is disabled due to inactivity");
         }
 

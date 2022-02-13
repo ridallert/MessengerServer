@@ -21,7 +21,7 @@
 
         private readonly ConfigManager _configs;
         private readonly ConcurrentDictionary<Guid, WsConnection> _connections;
-        private readonly MessengerDbRepository _dbManager;
+      
         private WebSocketServer _server;
         private ServerStateManager _stateManager;
 
@@ -33,7 +33,7 @@
         {
             _connections = new ConcurrentDictionary<Guid, WsConnection>();
             _configs = new ConfigManager();
-            _dbManager = new MessengerDbRepository();
+            
             _stateManager = new ServerStateManager();
 
             _stateManager.Initialize();
@@ -191,6 +191,7 @@
         {
             if (_connections.TryRemove(connectionId, out WsConnection connection) && connection.UserId != null)
             {
+                connection.Close();
                 _stateManager.ChangeUserStatus(connection.UserId.Value, UserStatus.Offline);
             }
         }

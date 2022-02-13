@@ -37,7 +37,7 @@
             {
                 IpAddress = "0.0.0.0",
                 Port = 7890,
-                ConnectionString = "Data Source=(localdb)\\MSSQLLocalDB; Initial Catalog=ServerState; Integrated Security=True;",
+                ConnectionString = "Data Source=(localdb)\\MSSQLLocalDB; Initial Catalog=ServerState; Integrated Security=True; Connection Timeout=15",
                 Provider = "System.Data.SqlClient",
                 DataBaseName = "ServerDataBase",
                 Timeout = 600,
@@ -49,9 +49,16 @@
 
             if (configs.ConnectionString == null)
             {
-                Console.WriteLine("Config file not found, default settings applied");
+                Console.WriteLine("Config file not found, file with default settings created");
                 SaveToFile(_defaultConfigs, _defaultPath);
                 configs = LoadFromFile(_defaultPath);
+            }
+            else
+            {
+                if (!configs.ConnectionString.Contains("Connection Timeout"))
+                {
+                    configs.ConnectionString += "; Connection Timeout=15";
+                }
             }
 
             IpAddress = IPAddress.Parse(configs.IpAddress);
